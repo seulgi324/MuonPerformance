@@ -70,7 +70,7 @@ private:
   int b_firstStrip, b_nStrips, b_chamber, b_layer, b_etaPartition;
 
   TTree *t_seg;
-  int b_nSegments;
+  int b_nSegments, b_chamber_seg, b_layer_seg;
   float b_eta;
 };
 
@@ -92,6 +92,9 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_seg = fs->make<TTree>("Segment", "Segment");
   t_seg->Branch("nSegments", &b_nSegments, "nSegments/I");
   t_seg->Branch("eta", &b_eta, "eta/F");
+  t_seg->Branch("chamber_seg", &b_chamber_seg, "chamber_seg/I");
+  t_seg->Branch("layer_seg", &b_layer_seg, "layer_seg/I");
+
 }
 
 HGCalSimTest::~HGCalSimTest()
@@ -127,12 +130,35 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         b_layer = layer;
         for (auto hit = me0Digi; hit != digisRange.second; ++hit) {
           int strip = hit->strip();
+          b_firstStrip = strip;
           b_etaPartition = roll_;
           t_digi->Fill();
           b_nME0Digis++;
         }
       }
     }
+  }
+  for (auto ch : ME0Geometry_->chambers()) {
+    std::cout << "err chk 1 " << std::endl;
+    ME0DetId cId = ch->id();
+    std::cout << "err chk 2 " << std::endl;
+    auto segsRange = me0Segments->get(cId);
+    std::cout << "err chk 3 " << std::endl;
+    auto me0Seg = segsRange.first;
+    std::cout << "err chk 4 " << std::endl;
+    auto segLd = me0Seg->localPosition();
+    std::cout << "err chk 5 " << std::endl;
+    auto chamber = cId.chamber();
+    std::cout << "err chk 6 " << std::endl;
+    b_eta = segLd.eta();
+    std::cout << "err chk 7 " << std::endl;
+    b_chamber_seg = chamber;
+    std::cout << "err chk 8 " << std::endl;
+    b_nSegments++;
+    std::cout << "err chk 9 " << std::endl;
+    t_seg->Fill();
+    std::cout << "err chk 10 " << std::endl;
+    std::cout << b_chamber_seg << " ==> seg x : " << segLd.x() << " seg y : " << segLd.y() << " seg eta : " << segLd.eta() << std::endl;
   }
   t_event->Fill();
 }
