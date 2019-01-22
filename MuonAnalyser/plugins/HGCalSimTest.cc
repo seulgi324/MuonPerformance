@@ -68,6 +68,10 @@ private:
 
   TTree *t_digi;
   int b_firstStrip, b_nStrips, b_chamber, b_layer, b_etaPartition;
+
+  TTree *t_seg;
+  int b_nSegments;
+  float b_eta;
 };
 
 HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
@@ -84,6 +88,10 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_digi->Branch("chamber", &b_chamber, "chamber/I");
   t_digi->Branch("layer", &b_layer, "layer/I");
   t_digi->Branch("etaPartition", &b_etaPartition, "etaPartition/I");
+
+  t_seg = fs->make<TTree>("Segment", "Segment");
+  t_seg->Branch("nSegments", &b_nSegments, "nSegments/I");
+  t_seg->Branch("eta", &b_eta, "eta/F");
 }
 
 HGCalSimTest::~HGCalSimTest()
@@ -96,11 +104,11 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::ESHandle<ME0Geometry> hGeom;
   iSetup.get<MuonGeometryRecord>().get(hGeom);
   const ME0Geometry* ME0Geometry_ = &*hGeom;
-  
-  edm::Handle<ME0DigiCollection> me0Digis;  
+
+  edm::Handle<ME0DigiCollection> me0Digis;
   iEvent.getByToken(me0Digis_, me0Digis);
-  
-  edm::Handle<ME0SegmentCollection> me0Segments;  
+
+  edm::Handle<ME0SegmentCollection> me0Segments;
   iEvent.getByToken(me0Segments_, me0Segments);
 
   b_nME0Digis = 0;
@@ -110,13 +118,16 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       for (auto roll : ly->etaPartitions()) {
         ME0DetId rId = roll->id();
 
-        auto digisRange = me0Digis->get(rId); 
+        auto digisRange = me0Digis->get(rId);
         auto me0Digi = digisRange.first;
         int roll_ = rId.roll();
         int chamber = rId.chamber();
         int layer = rId.layer();
+        b_chamber = chamber;
+        b_layer = layer;
         for (auto hit = me0Digi; hit != digisRange.second; ++hit) {
           int strip = hit->strip();
+          b_etaPartition = roll_;
           t_digi->Fill();
           b_nME0Digis++;
         }
