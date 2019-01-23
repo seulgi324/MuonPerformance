@@ -139,26 +139,18 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
   }
   for (auto ch : ME0Geometry_->chambers()) {
-    std::cout << "err chk 1 " << std::endl;
     ME0DetId cId = ch->id();
-    std::cout << "err chk 2 " << std::endl;
     auto segsRange = me0Segments->get(cId);
-    std::cout << "err chk 3 " << std::endl;
+    auto b_chamber_seg = cId.chamber();
     auto me0Seg = segsRange.first;
-    std::cout << "err chk 4 " << std::endl;
-    auto segLd = me0Seg->localPosition();
-    std::cout << "err chk 5 " << std::endl;
-    auto chamber = cId.chamber();
-    std::cout << "err chk 6 " << std::endl;
-    b_eta = segLd.eta();
-    std::cout << "err chk 7 " << std::endl;
-    b_chamber_seg = chamber;
-    std::cout << "err chk 8 " << std::endl;
-    b_nSegments++;
-    std::cout << "err chk 9 " << std::endl;
-    t_seg->Fill();
-    std::cout << "err chk 10 " << std::endl;
-    std::cout << b_chamber_seg << " ==> seg x : " << segLd.x() << " seg y : " << segLd.y() << " seg eta : " << segLd.eta() << std::endl;
+    for (auto seg = me0Seg; seg != segsRange.second; ++seg) {
+      auto segLd = me0Seg->localPosition();
+      auto gp = ch->toGlobal(segLd);
+      b_eta = gp.eta();
+      std::cout << b_chamber_seg << " ==> seg x : " << segLd.x() << " seg y : " << segLd.y() << " seg eta : " << segLd.eta() << std::endl;
+      b_nSegments++;
+      t_seg->Fill();
+    }
   }
   t_event->Fill();
 }
