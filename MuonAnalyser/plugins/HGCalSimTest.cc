@@ -147,7 +147,7 @@ private:
   TTree *t_DT_digi;
   int b_DT_Digi_chamber, b_DT_Digi_layer, b_DT_Digi_superLayer, b_DT_Digi_wheel, b_DT_Digi_sector, b_DT_Digi_station;
   TTree *t_DT_seg;
-  int b_DT_4DSeg_chamber, b_DT_4DSeg_layer, b_DT_4DSeg_superLayer, b_DT_4DSeg_wheel, b_DT_4DSeg_sector, b_DT_4DSeg_station, b_DT_4DSeg_nRecHits;
+  int b_DT_4DSeg_chamber, b_DT_4DSeg_wheel, b_DT_4DSeg_sector, b_DT_4DSeg_station, b_DT_4DSeg_nRecHits;
   float b_DT_4DSeg_eta;
   TTree *t_DT_rec;
   int b_DT_RecHit_chamber, b_DT_RecHit_layer, b_DT_RecHit_superLayer, b_DT_RecHit_wheel, b_DT_RecHit_sector, b_DT_RecHit_station;
@@ -230,7 +230,6 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_CSC_rec = fs->make<TTree>("CSC_2DRecHit", "CSC_2DRecHit");
   t_CSC_rec->Branch("RecHit_chamber",      &b_CSC_2DRecHit_chamber,      "RecHit_chaber/I");
   t_CSC_rec->Branch("RecHit_layer",        &b_CSC_2DRecHit_layer,        "RecHit_layer/I");
-  t_CSC_rec->Branch("RecHit_etaPartition", &b_CSC_2DRecHit_etaPartition, "RecHit_etaParition/I");
   t_CSC_rec->Branch("RecHit_eta",          &b_CSC_2DRecHit_eta,          "RecHit_eta/F");
   t_CSC_rec->Branch("RecHit_station",      &b_CSC_2DRecHit_station,      "RecHit_station/I");
   t_CSC_rec->Branch("RecHit_ring",         &b_CSC_2DRecHit_ring,         "RecHit_ring/I");
@@ -271,8 +270,6 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_DT_seg = fs->make<TTree>("DT_4DSegment", "DT_4DSegment");
   t_DT_seg->Branch("Seg_eta",        &b_DT_4DSeg_eta,        "Seg_eta/F");
   t_DT_seg->Branch("Seg_chamber",    &b_DT_4DSeg_chamber,    "Seg_chamber/I");
-  t_DT_seg->Branch("Seg_layer",      &b_DT_4DSeg_layer,      "Seg_layer/I");
-  t_DT_seg->Branch("Seg_superLayer", &b_DT_4DSeg_superLayer, "Seg_superLayer/I");
   t_DT_seg->Branch("Seg_nRecHits",   &b_DT_4DSeg_nRecHits,   "Seg_nRecHits/I");
   t_DT_seg->Branch("Seg_wheel",      &b_DT_4DSeg_wheel,      "Seg_wheel/I");
   t_DT_seg->Branch("Seg_sector",     &b_DT_4DSeg_sector,     "Seg_sector/I");
@@ -389,6 +386,7 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     ME0DetId cId = ch->id();
     auto segsRange = me0Segments->get(cId);
     b_ME0_Seg_chamber = cId.chamber();
+    b_ME0_Seg_layer   = cId.layer();
     auto me0Seg = segsRange.first; 
     for (auto seg = me0Seg; seg != segsRange.second; ++seg) {
       auto segLd = me0Seg->localPosition();
@@ -441,10 +439,7 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     b_CSC_Seg_ring         = cId.ring();
     b_CSC_2DRecHit_ring    = cId.ring();
     b_CSC_Seg_chamber      = cId.chamber();
-    b_CSC_2DRecHit_chamber = cId.chamber();
     b_CSC_Seg_layer        = cId.layer();
-    b_CSC_2DRecHit_layer   = cId.layer();
-
     auto segsRange = cscSegments->get(cId);
     auto cscSeg = segsRange.first;
     for (auto seg = cscSeg; seg != segsRange.second; ++seg) { 
@@ -458,6 +453,8 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     for (auto ly : ch->layers()) {
       CSCDetId lId = ly->id();
       /* CSC rechit */
+      b_CSC_2DRecHit_chamber = lId.chamber();
+      b_CSC_2DRecHit_layer   = lId.layer();
       auto recRange = csc2DRecHits->get(lId);
       auto cscRec = recRange.first;
       for (auto rec = cscRec; rec != recRange.second; ++rec) {
@@ -479,13 +476,8 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     b_GEM_Digi_ring      = cId.ring();
     b_GEM_Seg_ring       = cId.ring();
     b_GEM_RecHit_ring    = cId.ring();
-    b_GEM_Digi_chamber   = cId.chamber();
     b_GEM_Seg_chamber    = cId.chamber();
-    b_GEM_RecHit_chamber = cId.chamber();
-    b_GEM_Digi_layer     = cId.layer();
     b_GEM_Seg_layer      = cId.layer();
-    b_GEM_RecHit_layer   = cId.layer();
-
     auto segsRange = gemSegments->get(cId);
     auto gemSeg = segsRange.first;
     for (auto seg = gemSeg; seg != segsRange.second; ++seg) {
@@ -499,6 +491,10 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     for (auto roll : ch->etaPartitions()) {
       GEMDetId rId = roll->id();
       int roll_ = rId.roll();
+      b_GEM_Digi_chamber   = rId.chamber();
+      b_GEM_RecHit_chamber = rId.chamber();
+      b_GEM_Digi_layer     = rId.layer();
+      b_GEM_RecHit_layer   = rId.layer();
       /* GEM digi */
       auto digisRange = gemDigis->get(rId);
       auto gemDigi = digisRange.first;
@@ -578,8 +574,6 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     b_RPC_RecHit_ring      = cId.ring();
     //b_RPC_Digi_chamber     = cId.chamber();
     //b_RPC_RecHit_chamber   = cId.chamber();
-    b_RPC_Digi_layer       = cId.layer();
-    b_RPC_RecHit_layer     = cId.layer();
     b_RPC_Digi_sector      = cId.sector();
     b_RPC_RecHit_sector    = cId.sector();
     b_RPC_Digi_subSector   = cId.subsector();
@@ -590,6 +584,8 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       b_RPC_RecHit_isIRPC = (int)roll->isIRPC();
       RPCDetId rId = roll->id();
       int roll_ = rId.roll();
+      b_RPC_Digi_layer   = rId.layer();
+      b_RPC_RecHit_layer = rId.layer();
       /* RPC digi */
       auto digisRange = rpcDigis->get(rId);
       auto rpcDigi = digisRange.first;
@@ -622,51 +618,51 @@ void HGCalSimTest::beginRun(Run const& run, EventSetup const&){
 void HGCalSimTest::endRun(Run const&, EventSetup const&){}
 
 void HGCalSimTest::initValue() {
-  b_nME0Digis = 0; b_nME0Segments = 0;  b_nME0RecHits = 0;
-                   b_nCSCSegments = 0;  b_nCSC2DRecHits = 0;
-  b_nGEMDigis = 0; b_nGEMSegments = 0;  b_nGEMRecHits = 0;
+  b_nME0Digis = 0; b_nME0Segments  = 0;  b_nME0RecHits = 0;
+                   b_nCSCSegments  = 0;  b_nCSC2DRecHits = 0;
+  b_nGEMDigis = 0; b_nGEMSegments  = 0;  b_nGEMRecHits = 0;
   b_nDTDigis  = 0; b_nDT4DSegments = 0; b_nDTRecHits = 0; 
   b_nRPCDigis = 0;                      b_nRPCRecHits = 0;  
 
   /*ME0 digi*/
-  b_ME0_Digi_chamber = -1; b_ME0_Digi_layer = -1; b_ME0_Digi_etaPartition = -1;
+  b_ME0_Digi_chamber = -9; b_ME0_Digi_layer = -9; b_ME0_Digi_etaPartition = -9;
   /*ME0 seg*/
-  b_ME0_Seg_chamber = -1; b_ME0_Seg_layer = -1; b_ME0_Seg_nRecHits = -1;
+  b_ME0_Seg_chamber = -9; b_ME0_Seg_layer = -9; b_ME0_Seg_nRecHits = -9;
   b_ME0_Seg_eta = -9;
   /*ME0 rechit*/
-  b_ME0_RecHit_etaPartition = -1;
+  b_ME0_RecHit_etaPartition = -9;
   b_ME0_RecHit_eta = -9;
 
   /*CSC seg*/
-  b_CSC_Seg_chamber = -1; b_CSC_Seg_layer = -1; b_CSC_Seg_station = -1; b_CSC_Seg_ring = -1; b_CSC_Seg_nRecHits = -1;
+  b_CSC_Seg_chamber = -9; b_CSC_Seg_layer = -9; b_CSC_Seg_station = -9; b_CSC_Seg_ring = -9; b_CSC_Seg_nRecHits = -9;
   b_CSC_Seg_eta = -9;
   /*CSC rechit*/
-  b_CSC_2DRecHit_chamber = -1; b_CSC_2DRecHit_layer = -1; b_CSC_2DRecHit_station = -1; b_CSC_2DRecHit_ring = -1; b_CSC_2DRecHit_etaPartition = -1;
+  b_CSC_2DRecHit_chamber = -9; b_CSC_2DRecHit_layer = -9; b_CSC_2DRecHit_station = -9; b_CSC_2DRecHit_ring = -9; b_CSC_2DRecHit_etaPartition = -9;
   b_CSC_2DRecHit_eta = -9;
 
   /*GEM digi*/
-  b_GEM_Digi_chamber = -1; b_GEM_Digi_layer = -1; b_GEM_Digi_station = -1; b_GEM_Digi_ring = -1; b_GEM_Digi_etaPartition = -1;
+  b_GEM_Digi_chamber = -9; b_GEM_Digi_layer = -9; b_GEM_Digi_station = -9; b_GEM_Digi_ring = -9; b_GEM_Digi_etaPartition = -9;
   /*GEM seg*/
-  b_GEM_Seg_chamber = -1; b_GEM_Seg_layer = -1; b_GEM_Seg_station = -1; b_GEM_Seg_ring = -1; b_GEM_Seg_nRecHits = -1;
+  b_GEM_Seg_chamber = -9; b_GEM_Seg_layer = -9; b_GEM_Seg_station = -9; b_GEM_Seg_ring = -9; b_GEM_Seg_nRecHits = -9;
   b_GEM_Seg_eta = -9;
   /*GEM rechit*/
-  b_GEM_RecHit_chamber = -1; b_GEM_RecHit_layer = -1; b_GEM_RecHit_station = -1; b_GEM_RecHit_ring = -1; b_GEM_RecHit_etaPartition = -1;
+  b_GEM_RecHit_chamber = -9; b_GEM_RecHit_layer = -9; b_GEM_RecHit_station = -9; b_GEM_RecHit_ring = -9; b_GEM_RecHit_etaPartition = -9;
   b_GEM_RecHit_eta = -9;
 
   /* DT digi*/
-  b_DT_Digi_chamber = -1; b_DT_Digi_layer = -1; b_DT_Digi_superLayer = -1; b_DT_Digi_wheel = -1; b_DT_Digi_sector = -1; b_DT_Digi_station = -1;
+  b_DT_Digi_chamber = -9; b_DT_Digi_layer = -9; b_DT_Digi_superLayer = -9; b_DT_Digi_wheel = -9; b_DT_Digi_sector = -9; b_DT_Digi_station = -9;
   /* DT seg*/
-  b_DT_4DSeg_chamber = -1; b_DT_4DSeg_layer = -1; b_DT_4DSeg_superLayer = -1; b_DT_4DSeg_wheel = -1; b_DT_4DSeg_sector = -1; b_DT_4DSeg_station = -1; b_DT_4DSeg_nRecHits = -1;
+  b_DT_4DSeg_chamber = -9; b_DT_4DSeg_wheel = -9; b_DT_4DSeg_sector = -9; b_DT_4DSeg_station = -9; b_DT_4DSeg_nRecHits = -9;
   b_DT_4DSeg_eta = -9;
   /* DT rechit*/
-  b_DT_RecHit_chamber = -1; b_DT_RecHit_layer = -1; b_DT_RecHit_superLayer = -1; b_DT_RecHit_wheel = -1; b_DT_RecHit_sector = -1; b_DT_RecHit_station = -1;
+  b_DT_RecHit_chamber = -9; b_DT_RecHit_layer = -9; b_DT_RecHit_superLayer = -9; b_DT_RecHit_wheel = -9; b_DT_RecHit_sector = -9; b_DT_RecHit_station = -9;
   b_DT_RecHit_eta = -9;
 
   /*RPC digi*/
-  b_RPC_Digi_chamber = -1; b_RPC_Digi_layer = -1; b_RPC_Digi_station = -1; b_RPC_Digi_ring = -1; b_RPC_Digi_roll = -1; b_RPC_Digi_sector = -1; b_RPC_Digi_subSector = -1;
+  b_RPC_Digi_chamber = -9; b_RPC_Digi_layer = -9; b_RPC_Digi_station = -9; b_RPC_Digi_ring = -9; b_RPC_Digi_roll = -9; b_RPC_Digi_sector = -9; b_RPC_Digi_subSector = -9;
   b_RPC_Digi_isIRPC = -1;
   /*RPC rechit*/
-  b_RPC_RecHit_chamber = -1; b_RPC_RecHit_layer = -1; b_RPC_RecHit_station = -1; b_RPC_RecHit_ring = -1; b_RPC_RecHit_roll = -1; b_RPC_RecHit_sector = -1; b_RPC_RecHit_subSector = -1;
+  b_RPC_RecHit_chamber = -9; b_RPC_RecHit_layer = -9; b_RPC_RecHit_station = -9; b_RPC_RecHit_ring = -9; b_RPC_RecHit_roll = -9; b_RPC_RecHit_sector = -9; b_RPC_RecHit_subSector = -9;
   b_RPC_RecHit_eta = -9;
   b_RPC_RecHit_isIRPC = -1;
 
