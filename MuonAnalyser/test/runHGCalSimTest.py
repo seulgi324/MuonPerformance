@@ -43,7 +43,11 @@ process.HGCalSimTest = cms.EDAnalyzer('HGCalSimTest',
     gemDigis = cms.InputTag("simMuonGEMDigis"),
     gemSegments = cms.InputTag("gemSegments"),
     gemRecHits = cms.InputTag("gemRecHits"),
-
+    dtDigis = cms.InputTag("simMuonDTDigis"),
+    dt4DSegments = cms.InputTag("dt4DSegments"),
+    dtRecHits = cms.InputTag("dt1DRecHits"),
+    rpcDigis = cms.InputTag("simMuonRPCDigis"),
+    rpcRecHits = cms.InputTag("rpcRecHits"),
 
 )
 process.p = cms.Path(process.HGCalSimTest)
