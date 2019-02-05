@@ -118,6 +118,7 @@ private:
   /* ME0 */
   TTree *t_ME0_digi;
   int b_ME0_Digi_chamber, b_ME0_Digi_layer, b_ME0_Digi_etaPartition;
+  float b_ME0_Digi_eta;
   TTree *t_ME0_seg;
   int b_ME0_Seg_chamber, b_ME0_Seg_layer, b_ME0_Seg_nRecHits;
   float b_ME0_Seg_eta;
@@ -136,6 +137,7 @@ private:
   /* GEM */
   TTree *t_GEM_digi;
   int b_GEM_Digi_chamber, b_GEM_Digi_layer, b_GEM_Digi_station, b_GEM_Digi_ring, b_GEM_Digi_etaPartition;
+  float b_GEM_Digi_eta;
   TTree *t_GEM_seg;
   int b_GEM_Seg_chamber, b_GEM_Seg_layer, b_GEM_Seg_station, b_GEM_Seg_ring, b_GEM_Seg_nRecHits;
   float b_GEM_Seg_eta;
@@ -145,18 +147,20 @@ private:
 
   /* DT */
   TTree *t_DT_digi;
-  int b_DT_Digi_chamber, b_DT_Digi_layer, b_DT_Digi_superLayer, b_DT_Digi_wheel, b_DT_Digi_sector, b_DT_Digi_station;
+  int b_DT_Digi_chamber, b_DT_Digi_layer, b_DT_Digi_superLayer, b_DT_Digi_wheel, b_DT_Digi_sector, b_DT_Digi_station, b_DT_Digi_wire;
+  float b_DT_Digi_eta;
   TTree *t_DT_seg;
   int b_DT_4DSeg_chamber, b_DT_4DSeg_wheel, b_DT_4DSeg_sector, b_DT_4DSeg_station, b_DT_4DSeg_nRecHits;
   float b_DT_4DSeg_eta;
   TTree *t_DT_rec;
-  int b_DT_RecHit_chamber, b_DT_RecHit_layer, b_DT_RecHit_superLayer, b_DT_RecHit_wheel, b_DT_RecHit_sector, b_DT_RecHit_station;
+  int b_DT_RecHit_chamber, b_DT_RecHit_layer, b_DT_RecHit_superLayer, b_DT_RecHit_wheel, b_DT_RecHit_sector, b_DT_RecHit_station, b_DT_RecHit_wire;
   float b_DT_RecHit_eta;
 
   /* RPC */
   TTree *t_RPC_digi;
   int b_RPC_Digi_chamber, b_RPC_Digi_layer, b_RPC_Digi_station, b_RPC_Digi_ring, b_RPC_Digi_roll, b_RPC_Digi_sector, b_RPC_Digi_subSector;
   int b_RPC_Digi_isIRPC;
+  float b_RPC_Digi_eta;
   TTree *t_RPC_rec;
   int b_RPC_RecHit_chamber, b_RPC_RecHit_layer, b_RPC_RecHit_station, b_RPC_RecHit_ring, b_RPC_RecHit_roll, b_RPC_RecHit_sector, b_RPC_RecHit_subSector;
   int b_RPC_RecHit_isIRPC;
@@ -205,6 +209,7 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_ME0_digi->Branch("Digi_chamber",      &b_ME0_Digi_chamber,      "Digi_chamber/I");
   t_ME0_digi->Branch("Digi_layer",        &b_ME0_Digi_layer,        "Digi_layer/I");
   t_ME0_digi->Branch("Digi_etaPartition", &b_ME0_Digi_etaPartition, "Digi_etaPartition/I");
+  t_ME0_digi->Branch("Digi_eta",          &b_ME0_Digi_eta,          "Digi_eta/F");
 
   t_ME0_seg = fs->make<TTree>("ME0_Segment", "ME0_Segment");
   t_ME0_seg->Branch("Seg_eta",      &b_ME0_Seg_eta,      "Seg_eta/F");
@@ -241,6 +246,7 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_GEM_digi->Branch("Digi_etaPartition", &b_GEM_Digi_etaPartition, "Digi_etaPartition/I");
   t_GEM_digi->Branch("Digi_station",      &b_GEM_Digi_station,      "Digi_station/I");
   t_GEM_digi->Branch("Digi_ring",         &b_GEM_Digi_ring,         "Digi_ring/I");
+  t_GEM_digi->Branch("Digi_eta",          &b_GEM_Digi_eta,          "Digi_eta/F");
 
   t_GEM_seg = fs->make<TTree>("GEM_Segment", "GEM_Segment");
   t_GEM_seg->Branch("Seg_eta",      &b_GEM_Seg_eta,      "Seg_eta/F");
@@ -266,6 +272,8 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_DT_digi->Branch("Digi_wheel",        &b_DT_Digi_wheel,        "Digi_wheel/I");
   t_DT_digi->Branch("Digi_sector",       &b_DT_Digi_sector,       "Digi_sector/I");
   t_DT_digi->Branch("Digi_station",      &b_DT_Digi_station,      "Digi_station/I");
+  t_DT_digi->Branch("Digi_wrie",         &b_DT_Digi_wire,         "Digi_wire/I");
+  t_DT_digi->Branch("Digi_eta",          &b_DT_Digi_eta,          "Digi_eta/F");
 
   t_DT_seg = fs->make<TTree>("DT_4DSegment", "DT_4DSegment");
   t_DT_seg->Branch("Seg_eta",        &b_DT_4DSeg_eta,        "Seg_eta/F");
@@ -283,6 +291,7 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_DT_rec->Branch("RecHit_wheel",        &b_DT_RecHit_wheel,        "RecHit_wheel/I");
   t_DT_rec->Branch("RecHit_sector",       &b_DT_RecHit_sector,       "RecHit_sector/I");
   t_DT_rec->Branch("RecHit_station",      &b_DT_RecHit_station,      "RecHit_station/I");
+  t_DT_rec->Branch("RecHit_wrie",         &b_DT_RecHit_wire,         "RecHit_wire/I");
 
   /*RPC*/
   t_RPC_digi = fs->make<TTree>("RPC_Hit", "RPC_Hit");
@@ -294,17 +303,18 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_RPC_digi->Branch("Digi_sector",       &b_RPC_Digi_sector,       "Digi_sector/I");
   t_RPC_digi->Branch("Digi_subSector",    &b_RPC_Digi_subSector,    "Digi_subSector/I");
   t_RPC_digi->Branch("Digi_isIRPC",       &b_RPC_Digi_isIRPC,       "Digi_isIRPC/I");
+  t_RPC_digi->Branch("Digi_eta",          &b_RPC_Digi_eta,          "Digi_eta/F");
 
   t_RPC_rec = fs->make<TTree>("RPC_RecHit", "RPC_RecHit");
   t_RPC_rec->Branch("RecHit_chamber",      &b_RPC_RecHit_chamber,      "RecHit_chaber/I");
   t_RPC_rec->Branch("RecHit_layer",        &b_RPC_RecHit_layer,        "RecHit_layer/I");
-  t_RPC_rec->Branch("RecHit_eta",          &b_RPC_RecHit_eta,          "RecHit_eta/F");
   t_RPC_rec->Branch("RecHit_station",      &b_RPC_RecHit_station,      "RecHit_station/I");
   t_RPC_rec->Branch("RecHit_ring",         &b_RPC_RecHit_ring,         "RecHit_ring/I");
   t_RPC_rec->Branch("RecHit_roll",         &b_RPC_RecHit_roll,         "RecHit_roll/I");
   t_RPC_rec->Branch("RecHit_sector",       &b_RPC_RecHit_sector,       "RecHit_sector/I");
   t_RPC_rec->Branch("RecHit_subSector",    &b_RPC_RecHit_subSector,    "RecHit_subSector/I");
   t_RPC_rec->Branch("RecHit_isIRPC",       &b_RPC_RecHit_isIRPC,       "RecHit_isIRPC/I");
+  t_RPC_rec->Branch("RecHit_eta",          &b_RPC_RecHit_eta,          "RecHit_eta/F");
 
 }
 
@@ -409,6 +419,10 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         b_ME0_Digi_chamber = chamber;
         b_ME0_Digi_layer = layer;
         for (auto hit = me0Digi; hit != digisRange.second; ++hit) {
+          auto strip = me0Digi->strip();
+          auto digiLp = roll->centreOfStrip(strip);
+          auto gp = roll->toGlobal(digiLp);
+          b_ME0_Digi_eta = gp.eta();
           b_ME0_Digi_etaPartition = roll_;
           t_ME0_digi->Fill();
           b_nME0Digis++;
@@ -499,6 +513,10 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       auto digisRange = gemDigis->get(rId);
       auto gemDigi = digisRange.first;
       for (auto hit = gemDigi; hit != digisRange.second; ++hit) {
+        auto strip = gemDigi->strip();
+        auto digiLp = roll->centreOfStrip(strip);
+        auto gp = roll->toGlobal(digiLp);
+        b_GEM_Digi_eta = gp.eta();
         b_GEM_Digi_etaPartition = roll_;
         t_GEM_digi->Fill();
         b_nGEMDigis++;
@@ -547,10 +565,12 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     b_DT_RecHit_layer      = lId.layer();
     b_DT_Digi_superLayer   = lId.superLayer();
     b_DT_RecHit_superLayer = lId.superLayer();
+
     /* DT digi */
     auto digisRange = dtDigis->get(lId);
     auto dtDigi = digisRange.first;
-    for (auto hit = dtDigi; hit != digisRange.second; ++hit) { 
+    for (auto hit = dtDigi; hit != digisRange.second; ++hit) {
+      b_DT_Digi_wire = dtDigi->wire(); 
       t_DT_digi->Fill();
       b_nDTDigis++;
     }
@@ -560,6 +580,8 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     for (auto rec = dtRec; rec != recRange.second; ++rec) {
       auto recLd = dtRec->localPosition();
       auto gp = ly->toGlobal(recLd);
+      auto wireId = dtRec->wireId();
+      b_DT_RecHit_wire = wireId.wire();
       b_DT_RecHit_eta = gp.eta();
       b_nDTRecHits++;
       t_DT_rec->Fill();
@@ -590,6 +612,10 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       auto digisRange = rpcDigis->get(rId);
       auto rpcDigi = digisRange.first;
       for (auto hit = rpcDigi; hit != digisRange.second; ++hit) {
+        auto strip = rpcDigi->strip();
+        auto digiLp = roll->centreOfStrip(strip);
+        auto gp = roll->toGlobal(digiLp);
+        b_RPC_Digi_eta = gp.eta();
         b_RPC_Digi_roll = roll_;
         t_RPC_digi->Fill();
         b_nRPCDigis++;
@@ -626,6 +652,7 @@ void HGCalSimTest::initValue() {
 
   /*ME0 digi*/
   b_ME0_Digi_chamber = -9; b_ME0_Digi_layer = -9; b_ME0_Digi_etaPartition = -9;
+  b_ME0_Digi_eta = -9;
   /*ME0 seg*/
   b_ME0_Seg_chamber = -9; b_ME0_Seg_layer = -9; b_ME0_Seg_nRecHits = -9;
   b_ME0_Seg_eta = -9;
@@ -642,6 +669,7 @@ void HGCalSimTest::initValue() {
 
   /*GEM digi*/
   b_GEM_Digi_chamber = -9; b_GEM_Digi_layer = -9; b_GEM_Digi_station = -9; b_GEM_Digi_ring = -9; b_GEM_Digi_etaPartition = -9;
+  b_GEM_Digi_eta = -9;
   /*GEM seg*/
   b_GEM_Seg_chamber = -9; b_GEM_Seg_layer = -9; b_GEM_Seg_station = -9; b_GEM_Seg_ring = -9; b_GEM_Seg_nRecHits = -9;
   b_GEM_Seg_eta = -9;
@@ -650,16 +678,18 @@ void HGCalSimTest::initValue() {
   b_GEM_RecHit_eta = -9;
 
   /* DT digi*/
-  b_DT_Digi_chamber = -9; b_DT_Digi_layer = -9; b_DT_Digi_superLayer = -9; b_DT_Digi_wheel = -9; b_DT_Digi_sector = -9; b_DT_Digi_station = -9;
+  b_DT_Digi_chamber = -9; b_DT_Digi_layer = -9; b_DT_Digi_superLayer = -9; b_DT_Digi_wheel = -9; b_DT_Digi_sector = -9; b_DT_Digi_station = -9; b_DT_Digi_wire = -9;
+  b_DT_Digi_eta = -9;
   /* DT seg*/
   b_DT_4DSeg_chamber = -9; b_DT_4DSeg_wheel = -9; b_DT_4DSeg_sector = -9; b_DT_4DSeg_station = -9; b_DT_4DSeg_nRecHits = -9;
   b_DT_4DSeg_eta = -9;
   /* DT rechit*/
-  b_DT_RecHit_chamber = -9; b_DT_RecHit_layer = -9; b_DT_RecHit_superLayer = -9; b_DT_RecHit_wheel = -9; b_DT_RecHit_sector = -9; b_DT_RecHit_station = -9;
+  b_DT_RecHit_chamber = -9; b_DT_RecHit_layer = -9; b_DT_RecHit_superLayer = -9; b_DT_RecHit_wheel = -9; b_DT_RecHit_sector = -9; b_DT_RecHit_station = -9; b_DT_RecHit_wire = -9;
   b_DT_RecHit_eta = -9;
 
   /*RPC digi*/
   b_RPC_Digi_chamber = -9; b_RPC_Digi_layer = -9; b_RPC_Digi_station = -9; b_RPC_Digi_ring = -9; b_RPC_Digi_roll = -9; b_RPC_Digi_sector = -9; b_RPC_Digi_subSector = -9;
+  b_RPC_Digi_eta = -9;
   b_RPC_Digi_isIRPC = -1;
   /*RPC rechit*/
   b_RPC_RecHit_chamber = -9; b_RPC_RecHit_layer = -9; b_RPC_RecHit_station = -9; b_RPC_RecHit_ring = -9; b_RPC_RecHit_roll = -9; b_RPC_RecHit_sector = -9; b_RPC_RecHit_subSector = -9;
