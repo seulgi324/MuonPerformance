@@ -399,10 +399,10 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     b_ME0_Seg_layer   = cId.layer();
     auto me0Seg = segsRange.first; 
     for (auto seg = me0Seg; seg != segsRange.second; ++seg) {
-      auto segLd = me0Seg->localPosition();
+      auto segLd = seg->localPosition();
       auto gp = ch->toGlobal(segLd);
       b_ME0_Seg_eta = gp.eta();
-      b_ME0_Seg_nRecHits = me0Seg->nRecHits();
+      b_ME0_Seg_nRecHits = seg->nRecHits();
       std::cout << b_ME0_Seg_chamber << " ==> seg x : " << segLd.x() << " seg y : " << segLd.y() << " seg eta : " << gp.eta() << " nRecHits : " << b_ME0_Seg_nRecHits << std::endl;
       b_nME0Segments++;
       t_ME0_seg->Fill();
@@ -419,7 +419,7 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         b_ME0_Digi_chamber = chamber;
         b_ME0_Digi_layer = layer;
         for (auto hit = me0Digi; hit != digisRange.second; ++hit) {
-          auto strip = me0Digi->strip();
+          auto strip = hit->strip();
           auto digiLp = roll->centreOfStrip(strip);
           auto gp = roll->toGlobal(digiLp);
           b_ME0_Digi_eta = gp.eta();
@@ -433,7 +433,7 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         b_ME0_RecHit_chamber = chamber;
         b_ME0_RecHit_layer = layer;
         for (auto rec = me0Rec; rec != recRange.second; ++rec) {
-          auto recLd = me0Rec->localPosition();
+          auto recLd = rec->localPosition();
           auto gp = roll->toGlobal(recLd);
           b_ME0_RecHit_eta = gp.eta();
           b_ME0_RecHit_etaPartition = roll_;
@@ -457,10 +457,10 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     auto segsRange = cscSegments->get(cId);
     auto cscSeg = segsRange.first;
     for (auto seg = cscSeg; seg != segsRange.second; ++seg) { 
-      auto segLd = cscSeg->localPosition();
+      auto segLd = seg->localPosition();
       auto gp = ch->toGlobal(segLd);
       b_CSC_Seg_eta = gp.eta();
-      b_CSC_Seg_nRecHits = cscSeg->nRecHits();
+      b_CSC_Seg_nRecHits = seg->nRecHits();
       b_nCSCSegments++;
       t_CSC_seg->Fill();
     }
@@ -472,7 +472,7 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       auto recRange = csc2DRecHits->get(lId);
       auto cscRec = recRange.first;
       for (auto rec = cscRec; rec != recRange.second; ++rec) {
-        auto recLd = cscRec->localPosition();
+        auto recLd = rec->localPosition();
         auto gp = ly->toGlobal(recLd);
         b_CSC_2DRecHit_eta = gp.eta();
         b_nCSC2DRecHits++;
@@ -495,10 +495,10 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     auto segsRange = gemSegments->get(cId);
     auto gemSeg = segsRange.first;
     for (auto seg = gemSeg; seg != segsRange.second; ++seg) {
-      auto segLd = gemSeg->localPosition();
+      auto segLd = seg->localPosition();
       auto gp = ch->toGlobal(segLd);
       b_GEM_Seg_eta = gp.eta();
-      b_GEM_Seg_nRecHits = gemSeg->nRecHits();
+      b_GEM_Seg_nRecHits = seg->nRecHits();
       b_nGEMSegments++;
       t_GEM_seg->Fill();
     }
@@ -513,7 +513,7 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       auto digisRange = gemDigis->get(rId);
       auto gemDigi = digisRange.first;
       for (auto hit = gemDigi; hit != digisRange.second; ++hit) {
-        auto strip = gemDigi->strip();
+        auto strip = hit->strip();
         auto digiLp = roll->centreOfStrip(strip);
         auto gp = roll->toGlobal(digiLp);
         b_GEM_Digi_eta = gp.eta();
@@ -525,7 +525,7 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       auto recRange = gemRecHits->get(rId);
       auto gemRec = recRange.first;
       for (auto rec = gemRec; rec != recRange.second; ++rec) {
-        auto recLd = gemRec->localPosition();
+        auto recLd = rec->localPosition();
         auto gp = roll->toGlobal(recLd);
         b_GEM_RecHit_eta = gp.eta();
         b_GEM_RecHit_etaPartition = roll_;
@@ -545,10 +545,10 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     auto segsRange = dt4DSegments->get(cId);
     auto dt4DSeg = segsRange.first;
     for (auto seg = dt4DSeg; seg != segsRange.second; ++seg) {
-      auto segLd = dt4DSeg->localPosition();
+      auto segLd = seg->localPosition();
       auto gp = ch->toGlobal(segLd);
       b_DT_4DSeg_eta = gp.eta();
-      b_DT_4DSeg_nRecHits = dt4DSeg->recHits().size();
+      b_DT_4DSeg_nRecHits = seg->recHits().size();
       b_nDT4DSegments++;
       t_DT_seg->Fill();
     }
@@ -570,7 +570,7 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     auto digisRange = dtDigis->get(lId);
     auto dtDigi = digisRange.first;
     for (auto hit = dtDigi; hit != digisRange.second; ++hit) {
-      b_DT_Digi_wire = dtDigi->wire(); 
+      b_DT_Digi_wire = hit->wire(); 
       t_DT_digi->Fill();
       b_nDTDigis++;
     }
@@ -578,9 +578,9 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     auto recRange = dtRecHits->get(lId);
     auto dtRec = recRange.first;
     for (auto rec = dtRec; rec != recRange.second; ++rec) {
-      auto recLd = dtRec->localPosition();
+      auto recLd = rec->localPosition();
       auto gp = ly->toGlobal(recLd);
-      auto wireId = dtRec->wireId();
+      auto wireId = rec->wireId();
       b_DT_RecHit_wire = wireId.wire();
       b_DT_RecHit_eta = gp.eta();
       b_nDTRecHits++;
@@ -612,7 +612,7 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       auto digisRange = rpcDigis->get(rId);
       auto rpcDigi = digisRange.first;
       for (auto hit = rpcDigi; hit != digisRange.second; ++hit) {
-        auto strip = rpcDigi->strip();
+        auto strip = hit->strip();
         auto digiLp = roll->centreOfStrip(strip);
         auto gp = roll->toGlobal(digiLp);
         b_RPC_Digi_eta = gp.eta();
@@ -624,7 +624,7 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       auto recRange = rpcRecHits->get(rId);
       auto rpcRec = recRange.first;
       for (auto rec = rpcRec; rec != recRange.second; ++rec) {
-        auto recLd = rpcRec->localPosition();
+        auto recLd = rec->localPosition();
         auto gp = roll->toGlobal(recLd);
         b_RPC_RecHit_eta = gp.eta();
         b_RPC_RecHit_roll = roll_;
