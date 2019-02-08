@@ -56,6 +56,13 @@
 #include "DataFormats/RPCRecHit/interface/RPCRecHitCollection.h"
 #include "DataFormats/MuonDetId/interface/RPCDetId.h"
 #include "Geometry/RPCGeometry/interface/RPCGeometry.h"
+// Muon
+#include "DataFormats/PatCandidates/interface/Muon.h"
+// L1
+#include "DataFormats/L1TMuon/interface/L1MuBMTrack.h"
+
+#include "DataFormats/VertexReco/interface/Vertex.h"
+#include "DataFormats/VertexReco/interface/VertexFwd.h"
 
 #include "Geometry/Records/interface/MuonGeometryRecord.h"
 #include "Geometry/CommonDetUnit/interface/GeomDet.h"
@@ -88,6 +95,7 @@ private:
   virtual void beginRun(Run const&, EventSetup const&) override;
   virtual void endRun(Run const&, EventSetup const&) override;
 
+  void initMuonValue();
   void initValue();
 
   // ----------member data ---------------------------
@@ -109,6 +117,13 @@ private:
   edm::EDGetTokenT<RPCDigiCollection>        rpcDigis_;
   edm::EDGetTokenT<RPCRecHitCollection>      rpcRecHits_;
 
+  edm::EDGetTokenT<edm::View<reco::Muon> >   muonToken_;
+
+//  edm::EDGetTokenT<edm::View<L1MuBMTrack> >     muonL1Token_;
+
+  const reco::VertexCollection* vertexes_;
+  edm::EDGetTokenT<std::vector<reco::Vertex> > vtxToken_;
+  
   edm::Service<TFileService> fs;
 
   TTree *t_event;
@@ -150,7 +165,7 @@ private:
   int b_DT_Digi_chamber, b_DT_Digi_layer, b_DT_Digi_superLayer, b_DT_Digi_wheel, b_DT_Digi_sector, b_DT_Digi_station, b_DT_Digi_wire;
   float b_DT_Digi_eta;
   TTree *t_DT_seg;
-  int b_DT_4DSeg_chamber, b_DT_4DSeg_wheel, b_DT_4DSeg_sector, b_DT_4DSeg_station, b_DT_4DSeg_nRecHits;
+  int b_DT_4DSeg_chamber, b_DT_4DSeg_wheel, b_DT_4DSeg_sector, b_DT_4DSeg_station, b_DT_4DSeg_nRecHits, b_DT_4DSeg_hasZed;
   float b_DT_4DSeg_eta;
   TTree *t_DT_rec;
   int b_DT_RecHit_chamber, b_DT_RecHit_layer, b_DT_RecHit_superLayer, b_DT_RecHit_wheel, b_DT_RecHit_sector, b_DT_RecHit_station, b_DT_RecHit_wire;
@@ -166,6 +181,10 @@ private:
   int b_RPC_RecHit_isIRPC;
   float b_RPC_RecHit_eta;
 
+
+  TTree *t_Muon;
+  float b_muon_pt, b_muon_eta;
+  int b_muon_isTight, b_muon_isMedium, b_muon_isLoose;
 };
 
 HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
@@ -188,7 +207,13 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   rpcDigis_     = consumes<RPCDigiCollection>(iConfig.getParameter<edm::InputTag>("rpcDigis"));
   rpcRecHits_   = consumes<RPCRecHitCollection>(iConfig.getParameter<edm::InputTag>("rpcRecHits"));
 
+  muonToken_    = consumes<edm::View<reco::Muon> >(iConfig.getParameter<InputTag>("muonLabel"));
+  
+//  muonL1Token_  = consumes<edm::View<L1MuBMTrack> >(iConfig.getParameter<InputTag>("muonL1Label"));
 
+  vtxToken_     = consumes<vector<reco::Vertex> >(iConfig.getParameter<edm::InputTag>("primaryVertex"));
+  
+  
   t_event = fs->make<TTree>("Event", "Event");
   t_event->Branch("nME0Digis",     &b_nME0Digis,     "nME0Digis/I");
   t_event->Branch("nME0Segments",  &b_nME0Segments,  "nME0Segments/I");
@@ -282,6 +307,7 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_DT_seg->Branch("Seg_wheel",      &b_DT_4DSeg_wheel,      "Seg_wheel/I");
   t_DT_seg->Branch("Seg_sector",     &b_DT_4DSeg_sector,     "Seg_sector/I");
   t_DT_seg->Branch("Seg_station",    &b_DT_4DSeg_station,    "Seg_station/I");
+  t_DT_seg->Branch("Seg_hasZed",     &b_DT_4DSeg_hasZed,     "Seg_hasZed/I");
 
   t_DT_rec = fs->make<TTree>("DT_RecHit", "DT_RecHit");
   t_DT_rec->Branch("RecHit_chamber",      &b_DT_RecHit_chamber,      "RecHit_chaber/I");
@@ -315,6 +341,14 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_RPC_rec->Branch("RecHit_subSector",    &b_RPC_RecHit_subSector,    "RecHit_subSector/I");
   t_RPC_rec->Branch("RecHit_isIRPC",       &b_RPC_RecHit_isIRPC,       "RecHit_isIRPC/I");
   t_RPC_rec->Branch("RecHit_eta",          &b_RPC_RecHit_eta,          "RecHit_eta/F");
+
+  /*Muon*/
+  t_Muon = fs->make<TTree>("Muon", "Muon");
+  t_Muon->Branch("pt",       &b_muon_pt,       "pt/F");
+  t_Muon->Branch("eta",      &b_muon_eta,      "eta/F");
+  t_Muon->Branch("isTight",  &b_muon_isTight,  "isTight/I");
+  t_Muon->Branch("isMedium", &b_muon_isMedium, "isMedium/I");
+  t_Muon->Branch("isLoose",  &b_muon_isLoose,  "isLoose/I");
 
 }
 
@@ -388,6 +422,19 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   edm::Handle<RPCRecHitCollection> rpcRecHits;
   iEvent.getByToken(rpcRecHits_, rpcRecHits);
+
+  /* Muon */
+  edm::Handle<edm::View<reco::Muon> > muonHandle;
+  iEvent.getByToken(muonToken_, muonHandle);
+
+//  edm::Handle<edm::View<L1MuBMTrack> > muonL1Handle;
+//  iEvent.getByToken(muonL1Token_, muonL1Handle);
+
+  edm::Handle<reco::VertexCollection> vertices;
+  iEvent.getByToken(vtxToken_, vertices); 
+
+  vertexes_ = vertices.product();
+  reco::Vertex pv0 = vertexes_->at(0);
 
   initValue();
 
@@ -549,6 +596,7 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       auto gp = ch->toGlobal(segLd);
       b_DT_4DSeg_eta = gp.eta();
       b_DT_4DSeg_nRecHits = seg->recHits().size();
+      b_DT_4DSeg_hasZed = seg->hasZed();
       b_nDT4DSegments++;
       t_DT_seg->Fill();
     }
@@ -633,6 +681,24 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       }
     }
   }
+
+
+  /* reco Muon */
+  for(size_t i = 0; i < muonHandle->size(); ++i) {
+    initMuonValue();
+    edm::RefToBase<reco::Muon> muRef = muonHandle->refAt(i);
+    const reco::Muon* mu = muRef.get();
+    b_muon_isTight  = muon::isTightMuon(*mu, pv0);
+    b_muon_isMedium = muon::isMediumMuon(*mu);
+    b_muon_isLoose  = muon::isLooseMuon(*mu);
+    b_muon_pt       = mu->pt();
+    b_muon_eta      = mu->eta();
+    t_Muon->Fill();
+  }
+
+
+  /*L1 trigger*/
+
   t_event->Fill();
 }
 
@@ -643,6 +709,11 @@ void HGCalSimTest::beginRun(Run const& run, EventSetup const&){
 }
 void HGCalSimTest::endRun(Run const&, EventSetup const&){}
 
+void HGCalSimTest::initMuonValue() {
+  b_muon_isTight = -1; b_muon_isMedium = -1; b_muon_isLoose = -1;
+  b_muon_pt = -9; b_muon_eta = -9;
+
+}
 void HGCalSimTest::initValue() {
   b_nME0Digis = 0; b_nME0Segments  = 0;  b_nME0RecHits = 0;
                    b_nCSCSegments  = 0;  b_nCSC2DRecHits = 0;
@@ -683,6 +754,7 @@ void HGCalSimTest::initValue() {
   /* DT seg*/
   b_DT_4DSeg_chamber = -9; b_DT_4DSeg_wheel = -9; b_DT_4DSeg_sector = -9; b_DT_4DSeg_station = -9; b_DT_4DSeg_nRecHits = -9;
   b_DT_4DSeg_eta = -9;
+  b_DT_4DSeg_hasZed = -1;
   /* DT rechit*/
   b_DT_RecHit_chamber = -9; b_DT_RecHit_layer = -9; b_DT_RecHit_superLayer = -9; b_DT_RecHit_wheel = -9; b_DT_RecHit_sector = -9; b_DT_RecHit_station = -9; b_DT_RecHit_wire = -9;
   b_DT_RecHit_eta = -9;

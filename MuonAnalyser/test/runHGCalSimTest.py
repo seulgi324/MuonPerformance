@@ -48,6 +48,8 @@ process.HGCalSimTest = cms.EDAnalyzer('HGCalSimTest',
     dtRecHits = cms.InputTag("dt1DRecHits"),
     rpcDigis = cms.InputTag("simMuonRPCDigis"),
     rpcRecHits = cms.InputTag("rpcRecHits"),
+    muonLabel = cms.InputTag("muons"),
+    primaryVertex = cms.InputTag('offlinePrimaryVertices'),
 
 )
 process.p = cms.Path(process.HGCalSimTest)
