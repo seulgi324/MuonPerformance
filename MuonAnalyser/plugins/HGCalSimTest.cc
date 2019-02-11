@@ -173,11 +173,11 @@ private:
 
   /* RPC */
   TTree *t_RPC_digi;
-  int b_RPC_Digi_chamber, b_RPC_Digi_layer, b_RPC_Digi_station, b_RPC_Digi_ring, b_RPC_Digi_roll, b_RPC_Digi_sector, b_RPC_Digi_subSector;
+  int b_RPC_Digi_chamber, b_RPC_Digi_layer, b_RPC_Digi_station, b_RPC_Digi_ring, b_RPC_Digi_roll, b_RPC_Digi_sector, b_RPC_Digi_subSector, b_RPC_Digi_region;
   int b_RPC_Digi_isIRPC;
   float b_RPC_Digi_eta;
   TTree *t_RPC_rec;
-  int b_RPC_RecHit_chamber, b_RPC_RecHit_layer, b_RPC_RecHit_station, b_RPC_RecHit_ring, b_RPC_RecHit_roll, b_RPC_RecHit_sector, b_RPC_RecHit_subSector;
+  int b_RPC_RecHit_chamber, b_RPC_RecHit_layer, b_RPC_RecHit_station, b_RPC_RecHit_ring, b_RPC_RecHit_roll, b_RPC_RecHit_sector, b_RPC_RecHit_subSector, b_RPC_RecHit_region;
   int b_RPC_RecHit_isIRPC;
   float b_RPC_RecHit_eta;
 
@@ -330,6 +330,7 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_RPC_digi->Branch("Digi_subSector",    &b_RPC_Digi_subSector,    "Digi_subSector/I");
   t_RPC_digi->Branch("Digi_isIRPC",       &b_RPC_Digi_isIRPC,       "Digi_isIRPC/I");
   t_RPC_digi->Branch("Digi_eta",          &b_RPC_Digi_eta,          "Digi_eta/F");
+  t_RPC_digi->Branch("Digi_region",       &b_RPC_Digi_region,       "Digi_region/F");
 
   t_RPC_rec = fs->make<TTree>("RPC_RecHit", "RPC_RecHit");
   t_RPC_rec->Branch("RecHit_chamber",      &b_RPC_RecHit_chamber,      "RecHit_chaber/I");
@@ -341,6 +342,7 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_RPC_rec->Branch("RecHit_subSector",    &b_RPC_RecHit_subSector,    "RecHit_subSector/I");
   t_RPC_rec->Branch("RecHit_isIRPC",       &b_RPC_RecHit_isIRPC,       "RecHit_isIRPC/I");
   t_RPC_rec->Branch("RecHit_eta",          &b_RPC_RecHit_eta,          "RecHit_eta/F");
+  t_RPC_rec->Branch("RecHit_region",       &b_RPC_RecHit_region,       "RecHit_region/F");
 
   /*Muon*/
   t_Muon = fs->make<TTree>("Muon", "Muon");
@@ -648,6 +650,8 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     b_RPC_RecHit_sector    = cId.sector();
     b_RPC_Digi_subSector   = cId.subsector();
     b_RPC_RecHit_subSector = cId.subsector();
+    b_RPC_Digi_region      = cId.region(); // region : 0 for barrel +/-1 for +/- endcap
+    b_RPC_RecHit_region    = cId.region();
 
     for (auto roll : ch->rolls()) {
       b_RPC_Digi_isIRPC   = (int)roll->isIRPC();
@@ -760,11 +764,11 @@ void HGCalSimTest::initValue() {
   b_DT_RecHit_eta = -9;
 
   /*RPC digi*/
-  b_RPC_Digi_chamber = -9; b_RPC_Digi_layer = -9; b_RPC_Digi_station = -9; b_RPC_Digi_ring = -9; b_RPC_Digi_roll = -9; b_RPC_Digi_sector = -9; b_RPC_Digi_subSector = -9;
+  b_RPC_Digi_chamber = -9; b_RPC_Digi_layer = -9; b_RPC_Digi_station = -9; b_RPC_Digi_ring = -9; b_RPC_Digi_roll = -9; b_RPC_Digi_sector = -9; b_RPC_Digi_subSector = -9; b_RPC_Digi_region = -9;
   b_RPC_Digi_eta = -9;
   b_RPC_Digi_isIRPC = -1;
   /*RPC rechit*/
-  b_RPC_RecHit_chamber = -9; b_RPC_RecHit_layer = -9; b_RPC_RecHit_station = -9; b_RPC_RecHit_ring = -9; b_RPC_RecHit_roll = -9; b_RPC_RecHit_sector = -9; b_RPC_RecHit_subSector = -9;
+  b_RPC_RecHit_chamber = -9; b_RPC_RecHit_layer = -9; b_RPC_RecHit_station = -9; b_RPC_RecHit_ring = -9; b_RPC_RecHit_roll = -9; b_RPC_RecHit_sector = -9; b_RPC_RecHit_subSector = -9; b_RPC_RecHit_region = -9;
   b_RPC_RecHit_eta = -9;
   b_RPC_RecHit_isIRPC = -1;
 
