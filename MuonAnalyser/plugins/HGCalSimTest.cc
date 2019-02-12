@@ -56,6 +56,7 @@
 #include "DataFormats/RPCRecHit/interface/RPCRecHitCollection.h"
 #include "DataFormats/MuonDetId/interface/RPCDetId.h"
 #include "Geometry/RPCGeometry/interface/RPCGeometry.h"
+#include "Geometry/RPCGeometry/interface/RPCGeomServ.h"
 // Muon
 #include "DataFormats/PatCandidates/interface/Muon.h"
 // L1
@@ -67,6 +68,10 @@
 #include "Geometry/Records/interface/MuonGeometryRecord.h"
 #include "Geometry/CommonDetUnit/interface/GeomDet.h"
 
+#include "Geometry/CommonTopologies/interface/TrapezoidalStripTopology.h"
+#include "Geometry/CommonTopologies/interface/RadialStripTopology.h"
+#include "DataFormats/GeometrySurface/interface/TrapezoidalPlaneBounds.h"
+
 #include "Geometry/Records/interface/MuonGeometryRecord.h"
 
 #include "FWCore/Framework/interface/ESHandle.h"
@@ -74,6 +79,7 @@
 
 #include "TH1D.h"
 #include "TH2D.h"
+#include "TProfile.h"
 #include "TString.h"
 #include "TGraphAsymmErrors.h"
 #include "TLorentzVector.h"
@@ -97,6 +103,20 @@ private:
 
   void initMuonValue();
   void initValue();
+
+  TProfile* hME0Area_;
+  TH1D* hME0Counts_;
+
+  TProfile* hGEMArea_;
+  TH1D* hGEMCounts_;
+
+  TProfile* hCSCArea_;
+  TH1D* hCSCCounts_;
+
+  TProfile* hRPCArea_;
+  TH1D* hRPCCounts_;
+
+  TH1D* hEvents_;
 
   // ----------member data ---------------------------
   edm::EDGetTokenT<ME0DigiCollection>        me0Digis_;
@@ -132,7 +152,7 @@ private:
 
   /* ME0 */
   TTree *t_ME0_digi;
-  int b_ME0_Digi_chamber, b_ME0_Digi_layer, b_ME0_Digi_etaPartition;
+  int b_ME0_Digi_chamber, b_ME0_Digi_layer, b_ME0_Digi_etaPartition, b_ME0_Digi_bx;
   float b_ME0_Digi_eta;
   TTree *t_ME0_seg;
   int b_ME0_Seg_chamber, b_ME0_Seg_layer, b_ME0_Seg_nRecHits;
@@ -151,13 +171,13 @@ private:
 
   /* GEM */
   TTree *t_GEM_digi;
-  int b_GEM_Digi_chamber, b_GEM_Digi_layer, b_GEM_Digi_station, b_GEM_Digi_ring, b_GEM_Digi_etaPartition;
+  int b_GEM_Digi_chamber, b_GEM_Digi_layer, b_GEM_Digi_station, b_GEM_Digi_ring, b_GEM_Digi_etaPartition, b_GEM_Digi_bx;
   float b_GEM_Digi_eta;
   TTree *t_GEM_seg;
   int b_GEM_Seg_chamber, b_GEM_Seg_layer, b_GEM_Seg_station, b_GEM_Seg_ring, b_GEM_Seg_nRecHits;
   float b_GEM_Seg_eta;
   TTree *t_GEM_rec;
-  int b_GEM_RecHit_chamber, b_GEM_RecHit_layer, b_GEM_RecHit_station, b_GEM_RecHit_ring, b_GEM_RecHit_etaPartition;
+  int b_GEM_RecHit_chamber, b_GEM_RecHit_layer, b_GEM_RecHit_station, b_GEM_RecHit_ring, b_GEM_RecHit_etaPartition, b_GEM_RecHit_bx;
   float b_GEM_RecHit_eta; 
 
   /* DT */
@@ -235,6 +255,7 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_ME0_digi->Branch("Digi_layer",        &b_ME0_Digi_layer,        "Digi_layer/I");
   t_ME0_digi->Branch("Digi_etaPartition", &b_ME0_Digi_etaPartition, "Digi_etaPartition/I");
   t_ME0_digi->Branch("Digi_eta",          &b_ME0_Digi_eta,          "Digi_eta/F");
+  t_ME0_digi->Branch("Digi_bx",           &b_ME0_Digi_bx,           "Digi_bx/I");
 
   t_ME0_seg = fs->make<TTree>("ME0_Segment", "ME0_Segment");
   t_ME0_seg->Branch("Seg_eta",      &b_ME0_Seg_eta,      "Seg_eta/F");
@@ -272,6 +293,7 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_GEM_digi->Branch("Digi_station",      &b_GEM_Digi_station,      "Digi_station/I");
   t_GEM_digi->Branch("Digi_ring",         &b_GEM_Digi_ring,         "Digi_ring/I");
   t_GEM_digi->Branch("Digi_eta",          &b_GEM_Digi_eta,          "Digi_eta/F");
+  t_GEM_digi->Branch("Digi_bx",           &b_GEM_Digi_bx,           "Digi_bx/I");
 
   t_GEM_seg = fs->make<TTree>("GEM_Segment", "GEM_Segment");
   t_GEM_seg->Branch("Seg_eta",      &b_GEM_Seg_eta,      "Seg_eta/F");
@@ -288,6 +310,7 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_GEM_rec->Branch("RecHit_eta",          &b_GEM_RecHit_eta,          "RecHit_eta/F");
   t_GEM_rec->Branch("RecHit_station",      &b_GEM_RecHit_station,      "RecHit_station/I");
   t_GEM_rec->Branch("RecHit_ring",         &b_GEM_RecHit_ring,         "RecHit_ring/I");
+  t_GEM_rec->Branch("RecHit_bx",           &b_GEM_RecHit_bx,           "RecHit_bx/I");
 
   /*DT*/
   t_DT_digi = fs->make<TTree>("DT_Hit", "DT_Hit");
@@ -440,6 +463,8 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   initValue();
 
+  hEvents_->Fill(1);
+
   for (auto ch : ME0Geometry_->chambers()) {
     /* ME0 seg */
     ME0DetId cId = ch->id();
@@ -452,7 +477,7 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       auto gp = ch->toGlobal(segLd);
       b_ME0_Seg_eta = gp.eta();
       b_ME0_Seg_nRecHits = seg->nRecHits();
-      std::cout << b_ME0_Seg_chamber << " ==> seg x : " << segLd.x() << " seg y : " << segLd.y() << " seg eta : " << gp.eta() << " nRecHits : " << b_ME0_Seg_nRecHits << std::endl;
+      //std::cout << b_ME0_Seg_chamber << " ==> seg x : " << segLd.x() << " seg y : " << segLd.y() << " seg eta : " << gp.eta() << " nRecHits : " << b_ME0_Seg_nRecHits << std::endl;
       b_nME0Segments++;
       t_ME0_seg->Fill();
     }
@@ -473,6 +498,7 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
           auto gp = roll->toGlobal(digiLp);
           b_ME0_Digi_eta = gp.eta();
           b_ME0_Digi_etaPartition = roll_;
+          b_ME0_Digi_bx = hit->bx();
           t_ME0_digi->Fill();
           b_nME0Digis++;
         }
@@ -486,13 +512,28 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
           auto gp = roll->toGlobal(recLd);
           b_ME0_RecHit_eta = gp.eta();
           b_ME0_RecHit_etaPartition = roll_;
-          std::cout << b_ME0_RecHit_chamber << " ==> seg x : " << recLd.x() << " seg y : " << recLd.y() << " seg eta : " << gp.eta() << " nME0RecHits : " << b_nME0RecHits << std::endl;
+          //std::cout << b_ME0_RecHit_chamber << " ==> seg x : " << recLd.x() << " seg y : " << recLd.y() << " seg eta : " << gp.eta() << " nME0RecHits : " << b_nME0RecHits << std::endl;
           b_nME0RecHits++;
           t_ME0_rec->Fill();
         }
       }
     }
   }
+  for ( auto me0Hit : *me0RecHits ) {
+    const auto detId = me0Hit.me0Id();
+    auto region  = std::to_string(detId.region());
+    auto ch      = std::to_string(detId.chamber());
+    auto iEta    = std::to_string(detId.roll());
+    auto station = std::to_string(detId.station());
+    auto ring    = std::to_string(0);//std::to_string(detId.ring());
+    const string rollName = "Region_"+region+"_station_"+station+"_ring_"+ring+"_CH_"+ch+"_iEta_"+iEta;
+
+    const int idx = hME0Area_->GetXaxis()->FindBin(rollName.c_str());
+    hME0Counts_->Fill(idx);
+  }
+
+
+
 
   for (auto ch : CSCGeometry_->chambers()) {
     /* CSC seg */
@@ -529,6 +570,18 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       }
     }
   }
+  for ( auto cscHit : *csc2DRecHits ) {
+    const auto detId = cscHit.cscDetId();
+    auto endcap  = std::to_string(detId.endcap()); // +1 : forward , -1 : backward
+    auto ch      = std::to_string(detId.chamber());
+    auto ring    = std::to_string(detId.ring());
+    auto station = std::to_string(detId.station());
+    const string name = "Endcap_"+endcap+"_Station_"+station+"_ring_"+ring+"_CH_"+ch;
+    const int idx = hCSCArea_->GetXaxis()->FindBin(name.c_str());
+    hCSCCounts_->Fill(idx);
+  }
+
+
 
   for (auto ch : GEMGeometry_->chambers()) {
     /* GEM seg */
@@ -567,6 +620,7 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         auto gp = roll->toGlobal(digiLp);
         b_GEM_Digi_eta = gp.eta();
         b_GEM_Digi_etaPartition = roll_;
+        b_GEM_Digi_bx = hit->bx();
         t_GEM_digi->Fill();
         b_nGEMDigis++;
       }
@@ -578,11 +632,26 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         auto gp = roll->toGlobal(recLd);
         b_GEM_RecHit_eta = gp.eta();
         b_GEM_RecHit_etaPartition = roll_;
+        b_GEM_RecHit_bx = rec->BunchX();
         b_nGEMRecHits++;
         t_GEM_rec->Fill();
       }
     }
   }
+  for ( auto gemHit : *gemRecHits ) {
+    const auto detId = gemHit.gemId();
+    auto region  = std::to_string(detId.region());
+    auto ch      = std::to_string(detId.chamber());
+    auto iEta    = std::to_string(detId.roll());
+    auto station = std::to_string(detId.station());
+    auto ring    = std::to_string(detId.ring());
+    const string rollName = "Region_"+region+"_station_"+station+"_ring_"+ring+"_CH_"+ch+"_iEta_"+iEta;
+
+    const int idx = hGEMArea_->GetXaxis()->FindBin(rollName.c_str());
+    hGEMCounts_->Fill(idx);
+  }
+
+
 
   for (auto ch : DTGeometry_->chambers()) {
     /* DT seg */
@@ -637,7 +706,7 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       t_DT_rec->Fill();
     }
   }
-
+  
   for (auto ch : RPCGeometry_->chambers()) {
     RPCDetId cId = ch->id();
     b_RPC_Digi_station     = cId.station();
@@ -685,6 +754,13 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       }
     }
   }
+  for ( auto rpcHit : *rpcRecHits ) {
+    const auto detId = rpcHit.rawId();
+    const string rollName = RPCGeomServ(detId).name();
+
+    const int idx = hRPCArea_->GetXaxis()->FindBin(rollName.c_str());
+    hRPCCounts_->Fill(idx);
+  }
 
 
   /* reco Muon */
@@ -709,7 +785,131 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 void HGCalSimTest::beginJob(){}
 void HGCalSimTest::endJob(){}
 
-void HGCalSimTest::beginRun(Run const& run, EventSetup const&){
+void HGCalSimTest::beginRun(const edm::Run& run, const edm::EventSetup& iSetup){//(Run const& run, EventSetup const&){
+
+  hEvents_ = fs->make<TH1D>("hEvents", "hEvents;Types;Number of Events", 1, 1, 2);
+
+  hME0Area_   = fs->make<TProfile>("hME0Area", "Roll area;Roll Name;Area [cm^{2}]", 5000, 1, 5001, 0, 100000);
+  hME0Counts_ = fs->make<TH1D>("hME0Counts", "Counts;Roll Index;Number of RecHits", 5000, 1, 5001);
+
+  hGEMArea_   = fs->make<TProfile>("hGEMArea", "Roll area;Roll Name;Area [cm^{2}]", 5000, 1, 5001, 0, 100000);
+  hGEMCounts_ = fs->make<TH1D>("hGEMCounts", "Counts;Roll Index;Number of RecHits", 5000, 1, 5001);
+
+  hCSCArea_   = fs->make<TProfile>("hCSCArea", "Roll area;Roll Name;Area [cm^{2}]", 5000, 1, 5001, 0, 100000);
+  hCSCCounts_ = fs->make<TH1D>("hCSCCounts", "Counts;Roll Index;Number of RecHits", 5000, 1, 5001);
+
+  hRPCArea_   = fs->make<TProfile>("hRPCArea", "Roll area;Roll Name;Area [cm^{2}]", 5000, 1, 5001, 0, 100000);
+  hRPCCounts_ = fs->make<TH1D>("hRPCCounts", "Counts;Roll Index;Number of RecHits", 5000, 1, 5001);
+
+
+  edm::ESHandle<ME0Geometry> me0Geom;
+  iSetup.get<MuonGeometryRecord>().get(me0Geom);
+
+  edm::ESHandle<GEMGeometry> gemGeom;
+  iSetup.get<MuonGeometryRecord>().get(gemGeom);
+
+  edm::ESHandle<CSCGeometry> cscGeom;
+  iSetup.get<MuonGeometryRecord>().get(cscGeom);
+
+  edm::ESHandle<RPCGeometry> rpcGeom;
+  iSetup.get<MuonGeometryRecord>().get(rpcGeom);
+
+/*
+  for (auto ch : GEMGeometry_->chambers()) {
+    for(auto roll : ch->etaPartitions()) {
+      GEMDetId rId = roll->id();
+
+      const TrapezoidalStripTopology* top_(dynamic_cast<const TrapezoidalStripTopology*>(&(roll->topology())));
+      const float striplength(top_->stripLength());
+      const float pitch(roll->pitch());
+
+    }
+  }
+
+  for (auto ch : CSCGeometry_->chambers()) {
+    for (auto layer : ch->layers()) {
+      CSCDetId lId = layer->id();
+      const RadialStripTopology* top_(dynamic_cast<const RadialStripTopology*>(&(layer->topology())));
+      const float striplength(top_->stripLength());
+      const float pitch(layer->geometry()->stripPitch());
+      b_cscArea = striplength * pitch * top_->nstrips();
+    }
+  }
+*/
+  
+  /* ME0 */
+  int iME0 = 0;
+  for ( auto roll : me0Geom->etaPartitions() ) {
+    ++iME0;
+    const auto detId = roll->id();
+    auto region  = std::to_string(detId.region());
+    auto ch      = std::to_string(detId.chamber());
+    auto iEta    = std::to_string(detId.roll());
+    auto station = std::to_string(detId.station()); // for now, always 1
+    auto ring    = std::to_string(0);//std::to_string(detId.ring());
+    const string rollName = "Region_"+region+"_station_"+station+"_ring_"+ring+"_CH_"+ch+"_iEta_"+iEta;
+    const TrapezoidalStripTopology* top_(dynamic_cast<const TrapezoidalStripTopology*>(&(roll->topology())));
+    const float striplength(top_->stripLength());
+    const float pitch(roll->pitch());
+    auto nstrip = top_->nstrips();
+//    std::cout << " ME0 : " << rollName.c_str() << " / area : " << striplength*pitch*nstrip << std::endl;    
+    hME0Area_->GetXaxis()->SetBinLabel(iME0, rollName.c_str());
+    hME0Area_->Fill(iME0, striplength*pitch*nstrip);
+  }
+
+  /* GEM */
+  int iGEM = 0;
+  for ( auto roll : gemGeom->etaPartitions() ) {
+    ++iGEM;
+    const auto detId = roll->id();
+    auto region  = std::to_string(detId.region());
+    auto ch      = std::to_string(detId.chamber());
+    auto iEta    = std::to_string(detId.roll());
+    auto station = std::to_string(detId.station());
+    auto ring    = std::to_string(detId.ring());
+    const string rollName = "Region_"+region+"_station_"+station+"_ring_"+ring+"_CH_"+ch+"_iEta_"+iEta;
+    const TrapezoidalStripTopology* top_(dynamic_cast<const TrapezoidalStripTopology*>(&(roll->topology())));
+    const float striplength(top_->stripLength());
+    const float pitch(roll->pitch());
+    auto nstrip = top_->nstrips();    
+//    std::cout << " GEM : " << rollName.c_str() << " / area : " << striplength*pitch*nstrip << std::endl;    
+    hGEMArea_->GetXaxis()->SetBinLabel(iGEM, rollName.c_str());
+    hGEMArea_->Fill(iGEM, striplength*pitch*nstrip);
+  }
+
+  /* CSC */
+  int iCSC = 0;
+  for (auto ly : cscGeom->layers()) {
+    ++iCSC;
+    auto detId = ly->id();
+    auto endcap  = std::to_string(detId.endcap()); // +1 : forward , -1 : backward
+    auto ch      = std::to_string(detId.chamber());
+    auto ring    = std::to_string(detId.ring());
+    auto station = std::to_string(detId.station());
+    const string name = "Endcap_"+endcap+"_Station_"+station+"_ring_"+ring+"_CH_"+ch;
+    const RadialStripTopology* top_(dynamic_cast<const RadialStripTopology*>(&(ly->topology())));
+    const float striplength(top_->stripLength());
+    const float pitch(ly->geometry()->stripPitch());
+    const float nstrip = top_->nstrips();
+    //std::cout << " CSC : " << name << " / area : " << striplength*pitch*nstrip << std::endl;
+    hCSCArea_->GetXaxis()->SetBinLabel(iCSC, name.c_str());
+    hCSCArea_->Fill(iCSC, striplength*pitch*nstrip);
+  }
+
+  /* RPC */
+  int iRPC = 0;
+  for ( const RPCRoll* roll : rpcGeom->rolls() ) {
+    ++iRPC;
+    const auto detId = roll->id();
+    const string rollName = RPCGeomServ(detId).name();
+    const double width = roll->surface().bounds().width();
+    const double height = roll->surface().bounds().length();
+    //std::cout << " RPC : " << rollName.c_str() << " / area : " << width*height << std::endl;
+    hRPCArea_->GetXaxis()->SetBinLabel(iRPC, rollName.c_str());
+    hRPCArea_->Fill(iRPC, width*height);
+  }
+
+
 }
 void HGCalSimTest::endRun(Run const&, EventSetup const&){}
 
@@ -726,7 +926,7 @@ void HGCalSimTest::initValue() {
   b_nRPCDigis = 0;                      b_nRPCRecHits = 0;  
 
   /*ME0 digi*/
-  b_ME0_Digi_chamber = -9; b_ME0_Digi_layer = -9; b_ME0_Digi_etaPartition = -9;
+  b_ME0_Digi_chamber = -9; b_ME0_Digi_layer = -9; b_ME0_Digi_etaPartition = -9; b_ME0_Digi_bx = -999;
   b_ME0_Digi_eta = -9;
   /*ME0 seg*/
   b_ME0_Seg_chamber = -9; b_ME0_Seg_layer = -9; b_ME0_Seg_nRecHits = -9;
@@ -743,13 +943,13 @@ void HGCalSimTest::initValue() {
   b_CSC_2DRecHit_eta = -9;
 
   /*GEM digi*/
-  b_GEM_Digi_chamber = -9; b_GEM_Digi_layer = -9; b_GEM_Digi_station = -9; b_GEM_Digi_ring = -9; b_GEM_Digi_etaPartition = -9;
+  b_GEM_Digi_chamber = -9; b_GEM_Digi_layer = -9; b_GEM_Digi_station = -9; b_GEM_Digi_ring = -9; b_GEM_Digi_etaPartition = -9; b_GEM_Digi_bx = -999;
   b_GEM_Digi_eta = -9;
   /*GEM seg*/
   b_GEM_Seg_chamber = -9; b_GEM_Seg_layer = -9; b_GEM_Seg_station = -9; b_GEM_Seg_ring = -9; b_GEM_Seg_nRecHits = -9;
   b_GEM_Seg_eta = -9;
   /*GEM rechit*/
-  b_GEM_RecHit_chamber = -9; b_GEM_RecHit_layer = -9; b_GEM_RecHit_station = -9; b_GEM_RecHit_ring = -9; b_GEM_RecHit_etaPartition = -9;
+  b_GEM_RecHit_chamber = -9; b_GEM_RecHit_layer = -9; b_GEM_RecHit_station = -9; b_GEM_RecHit_ring = -9; b_GEM_RecHit_etaPartition = -9; b_GEM_RecHit_bx = -999;
   b_GEM_RecHit_eta = -9;
 
   /* DT digi*/
