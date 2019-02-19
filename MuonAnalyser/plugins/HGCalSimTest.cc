@@ -65,6 +65,15 @@
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 
+#include "SimDataFormats/TrackingHit/interface/PSimHit.h"
+#include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
+#include "SimDataFormats/Associations/interface/MuonToTrackingParticleAssociator.h"
+#include "SimDataFormats/Vertex/interface/SimVertex.h"
+#include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
+#include "SimMuon/MCTruth/interface/MuonToSimAssociatorByHits.h"
+#include "SimTracker/Common/interface/TrackingParticleSelector.h"
+#include "TrackingTools/TransientTrackingRecHit/interface/TransientTrackingRecHitBuilder.h"
+
 #include "Geometry/Records/interface/MuonGeometryRecord.h"
 #include "Geometry/CommonDetUnit/interface/GeomDet.h"
 
@@ -119,25 +128,26 @@ private:
   TH1D* hEvents_;
 
   // ----------member data ---------------------------
-  edm::EDGetTokenT<ME0DigiCollection>        me0Digis_;
-  edm::EDGetTokenT<ME0SegmentCollection>     me0Segments_;
-  edm::EDGetTokenT<ME0RecHitCollection>      me0RecHits_;
+  edm::EDGetTokenT<ME0DigiCollection>          me0Digis_;
+  edm::EDGetTokenT<ME0SegmentCollection>       me0Segments_;
+  edm::EDGetTokenT<ME0RecHitCollection>        me0RecHits_;
 
-  edm::EDGetTokenT<CSCSegmentCollection>     cscSegments_;
-  edm::EDGetTokenT<CSCRecHit2DCollection>    csc2DRecHits_;
+  edm::EDGetTokenT<CSCSegmentCollection>       cscSegments_;
+  edm::EDGetTokenT<CSCRecHit2DCollection>      csc2DRecHits_;
 
-  edm::EDGetTokenT<GEMDigiCollection>        gemDigis_;
-  edm::EDGetTokenT<GEMSegmentCollection>     gemSegments_;
-  edm::EDGetTokenT<GEMRecHitCollection>      gemRecHits_;
+  edm::EDGetTokenT<GEMDigiCollection>          gemDigis_;
+  edm::EDGetTokenT<GEMSegmentCollection>       gemSegments_;
+  edm::EDGetTokenT<GEMRecHitCollection>        gemRecHits_;
 
-  edm::EDGetTokenT<DTDigiCollection>         dtDigis_;
-  edm::EDGetTokenT<DTRecSegment4DCollection> dt4DSegments_;
-  edm::EDGetTokenT<DTRecHitCollection>       dtRecHits_;
+  edm::EDGetTokenT<DTDigiCollection>           dtDigis_;
+  edm::EDGetTokenT<DTRecSegment4DCollection>   dt4DSegments_;
+  edm::EDGetTokenT<DTRecHitCollection>         dtRecHits_;
 
-  edm::EDGetTokenT<RPCDigiCollection>        rpcDigis_;
-  edm::EDGetTokenT<RPCRecHitCollection>      rpcRecHits_;
+  edm::EDGetTokenT<RPCDigiCollection>          rpcDigis_;
+  edm::EDGetTokenT<RPCRecHitCollection>        rpcRecHits_;
 
-  edm::EDGetTokenT<edm::View<reco::Muon> >   muonToken_;
+  edm::EDGetTokenT<TrackingParticleCollection> simToken_;
+  edm::EDGetTokenT<edm::View<reco::Muon> >     muonToken_;
 
 //  edm::EDGetTokenT<edm::View<L1MuBMTrack> >     muonL1Token_;
 
@@ -153,58 +163,63 @@ private:
   /* ME0 */
   TTree *t_ME0_digi;
   int b_ME0_Digi_chamber, b_ME0_Digi_layer, b_ME0_Digi_etaPartition, b_ME0_Digi_bx;
-  float b_ME0_Digi_eta;
+  float b_ME0_Digi_eta, b_ME0_Digi_phi;
   TTree *t_ME0_seg;
   int b_ME0_Seg_chamber, b_ME0_Seg_layer, b_ME0_Seg_nRecHits;
-  float b_ME0_Seg_eta;
+  float b_ME0_Seg_eta, b_ME0_Seg_phi;
   TTree *t_ME0_rec;
   int b_ME0_RecHit_chamber, b_ME0_RecHit_layer, b_ME0_RecHit_etaPartition;
-  float b_ME0_RecHit_eta; 
+  float b_ME0_RecHit_eta, b_ME0_RecHit_phi; 
 
   /* CSC */
   TTree *t_CSC_seg;
   int b_CSC_Seg_chamber, b_CSC_Seg_layer, b_CSC_Seg_station, b_CSC_Seg_ring, b_CSC_Seg_nRecHits;
-  float b_CSC_Seg_eta;
+  float b_CSC_Seg_eta, b_CSC_Seg_phi;
   TTree *t_CSC_rec;
   int b_CSC_2DRecHit_chamber, b_CSC_2DRecHit_layer, b_CSC_2DRecHit_station, b_CSC_2DRecHit_ring, b_CSC_2DRecHit_etaPartition;
-  float b_CSC_2DRecHit_eta; 
+  float b_CSC_2DRecHit_eta, b_CSC_2DRecHit_phi; 
 
   /* GEM */
   TTree *t_GEM_digi;
   int b_GEM_Digi_chamber, b_GEM_Digi_layer, b_GEM_Digi_station, b_GEM_Digi_ring, b_GEM_Digi_etaPartition, b_GEM_Digi_bx;
-  float b_GEM_Digi_eta;
+  float b_GEM_Digi_eta, b_GEM_Digi_phi;
   TTree *t_GEM_seg;
   int b_GEM_Seg_chamber, b_GEM_Seg_layer, b_GEM_Seg_station, b_GEM_Seg_ring, b_GEM_Seg_nRecHits;
-  float b_GEM_Seg_eta;
+  float b_GEM_Seg_eta, b_GEM_Seg_phi;
   TTree *t_GEM_rec;
   int b_GEM_RecHit_chamber, b_GEM_RecHit_layer, b_GEM_RecHit_station, b_GEM_RecHit_ring, b_GEM_RecHit_etaPartition, b_GEM_RecHit_bx;
-  float b_GEM_RecHit_eta; 
+  float b_GEM_RecHit_eta, b_GEM_RecHit_phi; 
 
   /* DT */
   TTree *t_DT_digi;
   int b_DT_Digi_chamber, b_DT_Digi_layer, b_DT_Digi_superLayer, b_DT_Digi_wheel, b_DT_Digi_sector, b_DT_Digi_station, b_DT_Digi_wire;
-  float b_DT_Digi_eta;
+  float b_DT_Digi_eta, b_DT_Digi_phi;
   TTree *t_DT_seg;
   int b_DT_4DSeg_chamber, b_DT_4DSeg_wheel, b_DT_4DSeg_sector, b_DT_4DSeg_station, b_DT_4DSeg_nRecHits, b_DT_4DSeg_hasZed;
-  float b_DT_4DSeg_eta;
+  float b_DT_4DSeg_eta, b_DT_4DSeg_phi;
   TTree *t_DT_rec;
   int b_DT_RecHit_chamber, b_DT_RecHit_layer, b_DT_RecHit_superLayer, b_DT_RecHit_wheel, b_DT_RecHit_sector, b_DT_RecHit_station, b_DT_RecHit_wire;
-  float b_DT_RecHit_eta;
+  float b_DT_RecHit_eta, b_DT_RecHit_phi;
 
   /* RPC */
   TTree *t_RPC_digi;
   int b_RPC_Digi_chamber, b_RPC_Digi_layer, b_RPC_Digi_station, b_RPC_Digi_ring, b_RPC_Digi_roll, b_RPC_Digi_sector, b_RPC_Digi_subSector, b_RPC_Digi_region;
   int b_RPC_Digi_isIRPC;
-  float b_RPC_Digi_eta;
+  float b_RPC_Digi_eta, b_RPC_Digi_phi;
   TTree *t_RPC_rec;
   int b_RPC_RecHit_chamber, b_RPC_RecHit_layer, b_RPC_RecHit_station, b_RPC_RecHit_ring, b_RPC_RecHit_roll, b_RPC_RecHit_sector, b_RPC_RecHit_subSector, b_RPC_RecHit_region;
   int b_RPC_RecHit_isIRPC;
-  float b_RPC_RecHit_eta;
+  float b_RPC_RecHit_eta, b_RPC_RecHit_phi;
+
+  /* Muon */
+  TTree *t_genMuon;
+  float b_genMuon_pt, b_genMuon_eta, b_genMuon_phi;
+  int b_genMuon_isTight, b_genMuon_isMedium, b_genMuon_isLoose, b_genMuon_isTrackerMuon, b_genMuon_isGlobalMuon, b_genMuon_isME0Muon, b_genMuon_nMatchedStationLayer;
 
 
   TTree *t_Muon;
-  float b_muon_pt, b_muon_eta;
-  int b_muon_isTight, b_muon_isMedium, b_muon_isLoose;
+  float b_muon_pt, b_muon_eta, b_muon_phi;
+  int b_muon_isTight, b_muon_isMedium, b_muon_isLoose, b_muon_isTrackerMuon, b_muon_isGlobalMuon, b_muon_isME0Muon, b_muon_nMatchedStationLayer;
 };
 
 HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
@@ -227,6 +242,7 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   rpcDigis_     = consumes<RPCDigiCollection>(iConfig.getParameter<edm::InputTag>("rpcDigis"));
   rpcRecHits_   = consumes<RPCRecHitCollection>(iConfig.getParameter<edm::InputTag>("rpcRecHits"));
 
+  simToken_     = consumes<TrackingParticleCollection>(iConfig.getParameter<InputTag>("simLabel"));
   muonToken_    = consumes<edm::View<reco::Muon> >(iConfig.getParameter<InputTag>("muonLabel"));
   
 //  muonL1Token_  = consumes<edm::View<L1MuBMTrack> >(iConfig.getParameter<InputTag>("muonL1Label"));
@@ -255,10 +271,12 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_ME0_digi->Branch("Digi_layer",        &b_ME0_Digi_layer,        "Digi_layer/I");
   t_ME0_digi->Branch("Digi_etaPartition", &b_ME0_Digi_etaPartition, "Digi_etaPartition/I");
   t_ME0_digi->Branch("Digi_eta",          &b_ME0_Digi_eta,          "Digi_eta/F");
+  t_ME0_digi->Branch("Digi_phi",          &b_ME0_Digi_phi,          "Digi_phi/F");
   t_ME0_digi->Branch("Digi_bx",           &b_ME0_Digi_bx,           "Digi_bx/I");
 
   t_ME0_seg = fs->make<TTree>("ME0_Segment", "ME0_Segment");
   t_ME0_seg->Branch("Seg_eta",      &b_ME0_Seg_eta,      "Seg_eta/F");
+  t_ME0_seg->Branch("Seg_phi",      &b_ME0_Seg_phi,      "Seg_phi/F");
   t_ME0_seg->Branch("Seg_chamber",  &b_ME0_Seg_chamber,  "Seg_chamber/I");
   t_ME0_seg->Branch("Seg_layer",    &b_ME0_Seg_layer,    "Seg_layer/I");
   t_ME0_seg->Branch("Seg_nRecHits", &b_ME0_Seg_nRecHits, "Seg_nRecHits/I");
@@ -268,10 +286,12 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_ME0_rec->Branch("RecHit_layer",        &b_ME0_RecHit_layer,        "RecHit_layer/I");
   t_ME0_rec->Branch("RecHit_etaPartition", &b_ME0_RecHit_etaPartition, "RecHit_etaParition/I");
   t_ME0_rec->Branch("RecHit_eta",          &b_ME0_RecHit_eta,          "RecHit_eta/F");
+  t_ME0_rec->Branch("RecHit_phi",          &b_ME0_RecHit_phi,          "RecHit_phi/F");
 
   /*CSC*/
   t_CSC_seg = fs->make<TTree>("CSC_Segment", "CSC_Segment");
   t_CSC_seg->Branch("Seg_eta",      &b_CSC_Seg_eta,      "Seg_eta/F");
+  t_CSC_seg->Branch("Seg_phi",      &b_CSC_Seg_phi,      "Seg_phi/F");
   t_CSC_seg->Branch("Seg_chamber",  &b_CSC_Seg_chamber,  "Seg_chamber/I");
   t_CSC_seg->Branch("Seg_layer",    &b_CSC_Seg_layer,    "Seg_layer/I");
   t_CSC_seg->Branch("Seg_nRecHits", &b_CSC_Seg_nRecHits, "Seg_nRecHits/I");
@@ -282,6 +302,7 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_CSC_rec->Branch("RecHit_chamber",      &b_CSC_2DRecHit_chamber,      "RecHit_chaber/I");
   t_CSC_rec->Branch("RecHit_layer",        &b_CSC_2DRecHit_layer,        "RecHit_layer/I");
   t_CSC_rec->Branch("RecHit_eta",          &b_CSC_2DRecHit_eta,          "RecHit_eta/F");
+  t_CSC_rec->Branch("RecHit_phi",          &b_CSC_2DRecHit_phi,          "RecHit_phi/F");
   t_CSC_rec->Branch("RecHit_station",      &b_CSC_2DRecHit_station,      "RecHit_station/I");
   t_CSC_rec->Branch("RecHit_ring",         &b_CSC_2DRecHit_ring,         "RecHit_ring/I");
 
@@ -293,10 +314,12 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_GEM_digi->Branch("Digi_station",      &b_GEM_Digi_station,      "Digi_station/I");
   t_GEM_digi->Branch("Digi_ring",         &b_GEM_Digi_ring,         "Digi_ring/I");
   t_GEM_digi->Branch("Digi_eta",          &b_GEM_Digi_eta,          "Digi_eta/F");
+  t_GEM_digi->Branch("Digi_phi",          &b_GEM_Digi_phi,          "Digi_phi/F");
   t_GEM_digi->Branch("Digi_bx",           &b_GEM_Digi_bx,           "Digi_bx/I");
 
   t_GEM_seg = fs->make<TTree>("GEM_Segment", "GEM_Segment");
   t_GEM_seg->Branch("Seg_eta",      &b_GEM_Seg_eta,      "Seg_eta/F");
+  t_GEM_seg->Branch("Seg_phi",      &b_GEM_Seg_phi,      "Seg_phi/F");
   t_GEM_seg->Branch("Seg_chamber",  &b_GEM_Seg_chamber,  "Seg_chamber/I");
   t_GEM_seg->Branch("Seg_layer",    &b_GEM_Seg_layer,    "Seg_layer/I");
   t_GEM_seg->Branch("Seg_nRecHits", &b_GEM_Seg_nRecHits, "Seg_nRecHits/I");
@@ -308,6 +331,7 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_GEM_rec->Branch("RecHit_layer",        &b_GEM_RecHit_layer,        "RecHit_layer/I");
   t_GEM_rec->Branch("RecHit_etaPartition", &b_GEM_RecHit_etaPartition, "RecHit_etaParition/I");
   t_GEM_rec->Branch("RecHit_eta",          &b_GEM_RecHit_eta,          "RecHit_eta/F");
+  t_GEM_rec->Branch("RecHit_phi",          &b_GEM_RecHit_phi,          "RecHit_phi/F");
   t_GEM_rec->Branch("RecHit_station",      &b_GEM_RecHit_station,      "RecHit_station/I");
   t_GEM_rec->Branch("RecHit_ring",         &b_GEM_RecHit_ring,         "RecHit_ring/I");
   t_GEM_rec->Branch("RecHit_bx",           &b_GEM_RecHit_bx,           "RecHit_bx/I");
@@ -322,9 +346,11 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_DT_digi->Branch("Digi_station",      &b_DT_Digi_station,      "Digi_station/I");
   t_DT_digi->Branch("Digi_wrie",         &b_DT_Digi_wire,         "Digi_wire/I");
   t_DT_digi->Branch("Digi_eta",          &b_DT_Digi_eta,          "Digi_eta/F");
+  t_DT_digi->Branch("Digi_phi",          &b_DT_Digi_phi,          "Digi_phi/F");
 
   t_DT_seg = fs->make<TTree>("DT_4DSegment", "DT_4DSegment");
   t_DT_seg->Branch("Seg_eta",        &b_DT_4DSeg_eta,        "Seg_eta/F");
+  t_DT_seg->Branch("Seg_phi",        &b_DT_4DSeg_phi,        "Seg_phi/F");
   t_DT_seg->Branch("Seg_chamber",    &b_DT_4DSeg_chamber,    "Seg_chamber/I");
   t_DT_seg->Branch("Seg_nRecHits",   &b_DT_4DSeg_nRecHits,   "Seg_nRecHits/I");
   t_DT_seg->Branch("Seg_wheel",      &b_DT_4DSeg_wheel,      "Seg_wheel/I");
@@ -337,6 +363,7 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_DT_rec->Branch("RecHit_layer",        &b_DT_RecHit_layer,        "RecHit_layer/I");
   t_DT_rec->Branch("RecHit_superLayer",   &b_DT_RecHit_superLayer,   "RecHit_superLayer/I");
   t_DT_rec->Branch("RecHit_eta",          &b_DT_RecHit_eta,          "RecHit_eta/F");
+  t_DT_rec->Branch("RecHit_phi",          &b_DT_RecHit_phi,          "RecHit_phi/F");
   t_DT_rec->Branch("RecHit_wheel",        &b_DT_RecHit_wheel,        "RecHit_wheel/I");
   t_DT_rec->Branch("RecHit_sector",       &b_DT_RecHit_sector,       "RecHit_sector/I");
   t_DT_rec->Branch("RecHit_station",      &b_DT_RecHit_station,      "RecHit_station/I");
@@ -353,7 +380,8 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_RPC_digi->Branch("Digi_subSector",    &b_RPC_Digi_subSector,    "Digi_subSector/I");
   t_RPC_digi->Branch("Digi_isIRPC",       &b_RPC_Digi_isIRPC,       "Digi_isIRPC/I");
   t_RPC_digi->Branch("Digi_eta",          &b_RPC_Digi_eta,          "Digi_eta/F");
-  t_RPC_digi->Branch("Digi_region",       &b_RPC_Digi_region,       "Digi_region/F");
+  t_RPC_digi->Branch("Digi_phi",          &b_RPC_Digi_phi,          "Digi_phi/F");
+  t_RPC_digi->Branch("Digi_region",       &b_RPC_Digi_region,       "Digi_region/I");
 
   t_RPC_rec = fs->make<TTree>("RPC_RecHit", "RPC_RecHit");
   t_RPC_rec->Branch("RecHit_chamber",      &b_RPC_RecHit_chamber,      "RecHit_chaber/I");
@@ -365,15 +393,33 @@ HGCalSimTest::HGCalSimTest(const edm::ParameterSet& iConfig)
   t_RPC_rec->Branch("RecHit_subSector",    &b_RPC_RecHit_subSector,    "RecHit_subSector/I");
   t_RPC_rec->Branch("RecHit_isIRPC",       &b_RPC_RecHit_isIRPC,       "RecHit_isIRPC/I");
   t_RPC_rec->Branch("RecHit_eta",          &b_RPC_RecHit_eta,          "RecHit_eta/F");
-  t_RPC_rec->Branch("RecHit_region",       &b_RPC_RecHit_region,       "RecHit_region/F");
+  t_RPC_rec->Branch("RecHit_phi",          &b_RPC_RecHit_phi,          "RecHit_phi/F");
+  t_RPC_rec->Branch("RecHit_region",       &b_RPC_RecHit_region,       "RecHit_region/I");
 
   /*Muon*/
+  t_genMuon = fs->make<TTree>("gen_Muon", "gen_Muon");
+  t_genMuon->Branch("pt",                    &b_genMuon_pt,                   "pt/F");
+  t_genMuon->Branch("eta",                   &b_genMuon_eta,                  "eta/F");
+  t_genMuon->Branch("phi",                   &b_genMuon_phi,                  "phi/F");
+  t_genMuon->Branch("nMatchedStationLayer" , &b_genMuon_nMatchedStationLayer, "nMatchedStationLayer/I");
+  t_genMuon->Branch("isTrackerMuon",         &b_genMuon_isTrackerMuon,        "isTrackerMuon/I");
+  t_genMuon->Branch("isGlobalMuon",          &b_genMuon_isGlobalMuon,         "isGlobalMuon/I");
+  t_genMuon->Branch("isME0Muon",             &b_genMuon_isME0Muon,            "isME0Muon/I");
+  t_genMuon->Branch("isTight",               &b_genMuon_isTight,              "isTight/I");
+  t_genMuon->Branch("isMedium",              &b_genMuon_isMedium,             "isMedium/I");
+  t_genMuon->Branch("isLoose",               &b_genMuon_isLoose,              "isLoose/I");
+
   t_Muon = fs->make<TTree>("Muon", "Muon");
-  t_Muon->Branch("pt",       &b_muon_pt,       "pt/F");
-  t_Muon->Branch("eta",      &b_muon_eta,      "eta/F");
-  t_Muon->Branch("isTight",  &b_muon_isTight,  "isTight/I");
-  t_Muon->Branch("isMedium", &b_muon_isMedium, "isMedium/I");
-  t_Muon->Branch("isLoose",  &b_muon_isLoose,  "isLoose/I");
+  t_Muon->Branch("pt",                    &b_muon_pt,                   "pt/F");
+  t_Muon->Branch("eta",                   &b_muon_eta,                  "eta/F");
+  t_Muon->Branch("phi",                   &b_muon_phi,                  "phi/F");
+  t_Muon->Branch("nMatchedStationLayer" , &b_muon_nMatchedStationLayer, "nMatchedStationLayer/I");
+  t_Muon->Branch("isTrackerMuon",         &b_muon_isTrackerMuon,        "isTrackerMuon/I");
+  t_Muon->Branch("isGlobalMuon",          &b_muon_isGlobalMuon,         "isGlobalMuon/I");
+  t_Muon->Branch("isME0Muon",             &b_muon_isME0Muon,            "isME0Muon/I");
+  t_Muon->Branch("isTight",               &b_muon_isTight,              "isTight/I");
+  t_Muon->Branch("isMedium",              &b_muon_isMedium,             "isMedium/I");
+  t_Muon->Branch("isLoose",               &b_muon_isLoose,              "isLoose/I");
 
 }
 
@@ -449,6 +495,9 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   iEvent.getByToken(rpcRecHits_, rpcRecHits);
 
   /* Muon */
+  Handle<TrackingParticleCollection> simHandle;
+  iEvent.getByToken(simToken_, simHandle);
+
   edm::Handle<edm::View<reco::Muon> > muonHandle;
   iEvent.getByToken(muonToken_, muonHandle);
 
@@ -469,14 +518,16 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     /* ME0 seg */
     ME0DetId cId = ch->id();
     auto segsRange = me0Segments->get(cId);
-    b_ME0_Seg_chamber = cId.chamber();
-    b_ME0_Seg_layer   = cId.layer();
     auto me0Seg = segsRange.first; 
     for (auto seg = me0Seg; seg != segsRange.second; ++seg) {
       auto segLd = seg->localPosition();
       auto gp = ch->toGlobal(segLd);
-      b_ME0_Seg_eta = gp.eta();
+      b_ME0_Seg_eta      = gp.eta();
+      b_ME0_Seg_phi      = gp.phi();
       b_ME0_Seg_nRecHits = seg->nRecHits();
+      b_ME0_Seg_chamber  = cId.chamber();
+      b_ME0_Seg_layer    = cId.layer();
+
       //std::cout << b_ME0_Seg_chamber << " ==> seg x : " << segLd.x() << " seg y : " << segLd.y() << " seg eta : " << gp.eta() << " nRecHits : " << b_ME0_Seg_nRecHits << std::endl;
       b_nME0Segments++;
       t_ME0_seg->Fill();
@@ -490,28 +541,32 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         /* ME0 digi */
         auto digisRange = me0Digis->get(rId);
         auto me0Digi = digisRange.first;
-        b_ME0_Digi_chamber = chamber;
-        b_ME0_Digi_layer = layer;
         for (auto hit = me0Digi; hit != digisRange.second; ++hit) {
           auto strip = hit->strip();
           auto digiLp = roll->centreOfStrip(strip);
           auto gp = roll->toGlobal(digiLp);
-          b_ME0_Digi_eta = gp.eta();
+          b_ME0_Digi_eta          = gp.eta();
+          b_ME0_Digi_phi          = gp.phi();
           b_ME0_Digi_etaPartition = roll_;
-          b_ME0_Digi_bx = hit->bx();
+          b_ME0_Digi_bx           = hit->bx();
+          b_ME0_Digi_chamber      = chamber;
+          b_ME0_Digi_layer        = layer;
+
           t_ME0_digi->Fill();
           b_nME0Digis++;
         }
         /* ME0 RecHit */
         auto recRange = me0RecHits->get(rId);
         auto me0Rec = recRange.first;
-        b_ME0_RecHit_chamber = chamber;
-        b_ME0_RecHit_layer = layer;
         for (auto rec = me0Rec; rec != recRange.second; ++rec) {
           auto recLd = rec->localPosition();
           auto gp = roll->toGlobal(recLd);
-          b_ME0_RecHit_eta = gp.eta();
+          b_ME0_RecHit_eta          = gp.eta();
+          b_ME0_RecHit_phi          = gp.phi();
           b_ME0_RecHit_etaPartition = roll_;
+          b_ME0_RecHit_chamber      = chamber;
+          b_ME0_RecHit_layer        = layer;
+
           //std::cout << b_ME0_RecHit_chamber << " ==> seg x : " << recLd.x() << " seg y : " << recLd.y() << " seg eta : " << gp.eta() << " nME0RecHits : " << b_nME0RecHits << std::endl;
           b_nME0RecHits++;
           t_ME0_rec->Fill();
@@ -526,45 +581,47 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     auto iEta    = std::to_string(detId.roll());
     auto station = std::to_string(detId.station());
     auto ring    = std::to_string(0);//std::to_string(detId.ring());
-    const string rollName = "Region_"+region+"_station_"+station+"_ring_"+ring+"_CH_"+ch+"_iEta_"+iEta;
-
+    auto layer   = std::to_string(detId.layer());
+    const string rollName = "Region_"+region+"_station_"+station+"_ring_"+ring+"_CH_"+ch+"_layer_"+layer+"_iEta_"+iEta;
     const int idx = hME0Area_->GetXaxis()->FindBin(rollName.c_str());
     hME0Counts_->Fill(idx);
   }
 
 
-
-
   for (auto ch : CSCGeometry_->chambers()) {
     /* CSC seg */
     CSCDetId cId = ch->id();
-    b_CSC_Seg_station      = cId.station();
-    b_CSC_2DRecHit_station = cId.station();
-    b_CSC_Seg_ring         = cId.ring();
-    b_CSC_2DRecHit_ring    = cId.ring();
-    b_CSC_Seg_chamber      = cId.chamber();
-    b_CSC_Seg_layer        = cId.layer();
     auto segsRange = cscSegments->get(cId);
     auto cscSeg = segsRange.first;
     for (auto seg = cscSeg; seg != segsRange.second; ++seg) { 
       auto segLd = seg->localPosition();
       auto gp = ch->toGlobal(segLd);
-      b_CSC_Seg_eta = gp.eta();
+      b_CSC_Seg_eta      = gp.eta();
+      b_CSC_Seg_phi      = gp.phi();
       b_CSC_Seg_nRecHits = seg->nRecHits();
+      b_CSC_Seg_station  = cId.station();
+      b_CSC_Seg_ring     = cId.ring();
+      b_CSC_Seg_chamber  = cId.chamber();
+      b_CSC_Seg_layer    = cId.layer();
+
       b_nCSCSegments++;
       t_CSC_seg->Fill();
     }
     for (auto ly : ch->layers()) {
       CSCDetId lId = ly->id();
       /* CSC rechit */
-      b_CSC_2DRecHit_chamber = lId.chamber();
-      b_CSC_2DRecHit_layer   = lId.layer();
       auto recRange = csc2DRecHits->get(lId);
       auto cscRec = recRange.first;
       for (auto rec = cscRec; rec != recRange.second; ++rec) {
         auto recLd = rec->localPosition();
         auto gp = ly->toGlobal(recLd);
-        b_CSC_2DRecHit_eta = gp.eta();
+        b_CSC_2DRecHit_eta     = gp.eta();
+        b_CSC_2DRecHit_phi     = gp.phi();
+        b_CSC_2DRecHit_station = lId.station();
+        b_CSC_2DRecHit_ring    = lId.ring();
+        b_CSC_2DRecHit_chamber = lId.chamber();
+        b_CSC_2DRecHit_layer   = lId.layer();
+
         b_nCSC2DRecHits++;
         t_CSC_rec->Fill();
       }
@@ -576,7 +633,8 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     auto ch      = std::to_string(detId.chamber());
     auto ring    = std::to_string(detId.ring());
     auto station = std::to_string(detId.station());
-    const string name = "Endcap_"+endcap+"_Station_"+station+"_ring_"+ring+"_CH_"+ch;
+    auto layer   = std::to_string(detId.layer());
+    const string name = "Endcap_"+endcap+"_station_"+station+"_ring_"+ring+"_CH_"+ch+"_layer_"+layer;
     const int idx = hCSCArea_->GetXaxis()->FindBin(name.c_str());
     hCSCCounts_->Fill(idx);
   }
@@ -586,31 +644,25 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   for (auto ch : GEMGeometry_->chambers()) {
     /* GEM seg */
     GEMDetId cId = ch->id();
-    b_GEM_Digi_station   = cId.station();
-    b_GEM_Seg_station    = cId.station();
-    b_GEM_RecHit_station = cId.station();
-    b_GEM_Digi_ring      = cId.ring();
-    b_GEM_Seg_ring       = cId.ring();
-    b_GEM_RecHit_ring    = cId.ring();
-    b_GEM_Seg_chamber    = cId.chamber();
-    b_GEM_Seg_layer      = cId.layer();
     auto segsRange = gemSegments->get(cId);
     auto gemSeg = segsRange.first;
     for (auto seg = gemSeg; seg != segsRange.second; ++seg) {
       auto segLd = seg->localPosition();
       auto gp = ch->toGlobal(segLd);
-      b_GEM_Seg_eta = gp.eta();
-      b_GEM_Seg_nRecHits = seg->nRecHits();
+      b_GEM_Seg_eta        = gp.eta();
+      b_GEM_Seg_phi        = gp.phi();
+      b_GEM_Seg_nRecHits   = seg->nRecHits();
+      b_GEM_Seg_station    = cId.station();
+      b_GEM_Seg_ring       = cId.ring();
+      b_GEM_Seg_chamber    = cId.chamber();
+      b_GEM_Seg_layer      = cId.layer();
+
       b_nGEMSegments++;
       t_GEM_seg->Fill();
     }
     for (auto roll : ch->etaPartitions()) {
       GEMDetId rId = roll->id();
       int roll_ = rId.roll();
-      b_GEM_Digi_chamber   = rId.chamber();
-      b_GEM_RecHit_chamber = rId.chamber();
-      b_GEM_Digi_layer     = rId.layer();
-      b_GEM_RecHit_layer   = rId.layer();
       /* GEM digi */
       auto digisRange = gemDigis->get(rId);
       auto gemDigi = digisRange.first;
@@ -618,9 +670,15 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         auto strip = hit->strip();
         auto digiLp = roll->centreOfStrip(strip);
         auto gp = roll->toGlobal(digiLp);
-        b_GEM_Digi_eta = gp.eta();
+        b_GEM_Digi_eta          = gp.eta();
+        b_GEM_Digi_phi          = gp.phi();
         b_GEM_Digi_etaPartition = roll_;
-        b_GEM_Digi_bx = hit->bx();
+        b_GEM_Digi_bx           = hit->bx();
+        b_GEM_Digi_chamber      = rId.chamber();
+        b_GEM_Digi_layer        = rId.layer();
+        b_GEM_Digi_station      = rId.station();
+        b_GEM_Digi_ring         = rId.ring();
+
         t_GEM_digi->Fill();
         b_nGEMDigis++;
       }
@@ -630,9 +688,15 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       for (auto rec = gemRec; rec != recRange.second; ++rec) {
         auto recLd = rec->localPosition();
         auto gp = roll->toGlobal(recLd);
-        b_GEM_RecHit_eta = gp.eta();
+        b_GEM_RecHit_eta          = gp.eta();
+        b_GEM_RecHit_phi          = gp.phi();
         b_GEM_RecHit_etaPartition = roll_;
-        b_GEM_RecHit_bx = rec->BunchX();
+        b_GEM_RecHit_bx           = rec->BunchX();
+        b_GEM_RecHit_chamber      = rId.chamber();
+        b_GEM_RecHit_layer        = rId.layer();
+        b_GEM_RecHit_station      = rId.station();
+        b_GEM_RecHit_ring         = rId.ring();
+
         b_nGEMRecHits++;
         t_GEM_rec->Fill();
       }
@@ -645,7 +709,8 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     auto iEta    = std::to_string(detId.roll());
     auto station = std::to_string(detId.station());
     auto ring    = std::to_string(detId.ring());
-    const string rollName = "Region_"+region+"_station_"+station+"_ring_"+ring+"_CH_"+ch+"_iEta_"+iEta;
+    auto layer   = std::to_string(detId.layer());
+    const string rollName = "Region_"+region+"_station_"+station+"_ring_"+ring+"_CH_"+ch+"_layer_"+layer+"_iEta_"+iEta;
 
     const int idx = hGEMArea_->GetXaxis()->FindBin(rollName.c_str());
     hGEMCounts_->Fill(idx);
@@ -656,40 +721,37 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   for (auto ch : DTGeometry_->chambers()) {
     /* DT seg */
     DTChamberId cId = ch->id();
-    b_DT_4DSeg_station       = cId.station();
-    b_DT_4DSeg_sector        = cId.sector();
-    b_DT_4DSeg_wheel         = cId.wheel();
     //b_DT_4DSeg_chamber       = ch->id();
     auto segsRange = dt4DSegments->get(cId);
     auto dt4DSeg = segsRange.first;
     for (auto seg = dt4DSeg; seg != segsRange.second; ++seg) {
       auto segLd = seg->localPosition();
       auto gp = ch->toGlobal(segLd);
-      b_DT_4DSeg_eta = gp.eta();
+      b_DT_4DSeg_eta      = gp.eta();
+      b_DT_4DSeg_phi      = gp.phi();
       b_DT_4DSeg_nRecHits = seg->recHits().size();
-      b_DT_4DSeg_hasZed = seg->hasZed();
+      b_DT_4DSeg_hasZed   = seg->hasZed();
+      b_DT_4DSeg_station  = cId.station();
+      b_DT_4DSeg_sector   = cId.sector();
+      b_DT_4DSeg_wheel    = cId.wheel();
+
       b_nDT4DSegments++;
       t_DT_seg->Fill();
     }
   }
   for (auto ly : DTGeometry_->layers()) {
     DTLayerId lId = ly->id();
-    b_DT_Digi_station      = lId.station();
-    b_DT_RecHit_station    = lId.station();
-    b_DT_Digi_sector       = lId.sector();
-    b_DT_RecHit_sector     = lId.sector();
-    b_DT_Digi_wheel        = lId.wheel();
-    b_DT_RecHit_wheel      = lId.wheel();
-    b_DT_Digi_layer        = lId.layer();
-    b_DT_RecHit_layer      = lId.layer();
-    b_DT_Digi_superLayer   = lId.superLayer();
-    b_DT_RecHit_superLayer = lId.superLayer();
-
     /* DT digi */
     auto digisRange = dtDigis->get(lId);
     auto dtDigi = digisRange.first;
     for (auto hit = dtDigi; hit != digisRange.second; ++hit) {
-      b_DT_Digi_wire = hit->wire(); 
+      b_DT_Digi_wire       = hit->wire(); 
+      b_DT_Digi_station    = lId.station();
+      b_DT_Digi_sector     = lId.sector();
+      b_DT_Digi_wheel      = lId.wheel();
+      b_DT_Digi_layer      = lId.layer();
+      b_DT_Digi_superLayer = lId.superLayer();
+
       t_DT_digi->Fill();
       b_nDTDigis++;
     }
@@ -700,44 +762,46 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       auto recLd = rec->localPosition();
       auto gp = ly->toGlobal(recLd);
       auto wireId = rec->wireId();
-      b_DT_RecHit_wire = wireId.wire();
-      b_DT_RecHit_eta = gp.eta();
+      b_DT_RecHit_wire       = wireId.wire();
+      b_DT_RecHit_eta        = gp.eta();
+      b_DT_RecHit_phi        = gp.phi();
+      b_DT_RecHit_station    = lId.station();
+      b_DT_RecHit_sector     = lId.sector();
+      b_DT_RecHit_wheel      = lId.wheel();
+      b_DT_RecHit_layer      = lId.layer();
+      b_DT_RecHit_superLayer = lId.superLayer();
+
       b_nDTRecHits++;
       t_DT_rec->Fill();
     }
   }
   
   for (auto ch : RPCGeometry_->chambers()) {
-    RPCDetId cId = ch->id();
-    b_RPC_Digi_station     = cId.station();
-    b_RPC_RecHit_station   = cId.station();
-    b_RPC_Digi_ring        = cId.ring();
-    b_RPC_RecHit_ring      = cId.ring();
+    //RPCDetId cId = ch->id();
     //b_RPC_Digi_chamber     = cId.chamber();
     //b_RPC_RecHit_chamber   = cId.chamber();
-    b_RPC_Digi_sector      = cId.sector();
-    b_RPC_RecHit_sector    = cId.sector();
-    b_RPC_Digi_subSector   = cId.subsector();
-    b_RPC_RecHit_subSector = cId.subsector();
-    b_RPC_Digi_region      = cId.region(); // region : 0 for barrel +/-1 for +/- endcap
-    b_RPC_RecHit_region    = cId.region();
-
     for (auto roll : ch->rolls()) {
-      b_RPC_Digi_isIRPC   = (int)roll->isIRPC();
-      b_RPC_RecHit_isIRPC = (int)roll->isIRPC();
       RPCDetId rId = roll->id();
       int roll_ = rId.roll();
-      b_RPC_Digi_layer   = rId.layer();
-      b_RPC_RecHit_layer = rId.layer();
       /* RPC digi */
       auto digisRange = rpcDigis->get(rId);
       auto rpcDigi = digisRange.first;
+      cout << rId.region() << endl;
       for (auto hit = rpcDigi; hit != digisRange.second; ++hit) {
         auto strip = hit->strip();
         auto digiLp = roll->centreOfStrip(strip);
         auto gp = roll->toGlobal(digiLp);
-        b_RPC_Digi_eta = gp.eta();
-        b_RPC_Digi_roll = roll_;
+        b_RPC_Digi_eta       = gp.eta();
+        b_RPC_Digi_phi       = gp.phi();
+        b_RPC_Digi_roll      = roll_;           // Roll id  (also known as eta partition): each chamber is divided along the strip direction in - two or three parts (rolls) for Barrel and two, three or four parts for endcap
+        b_RPC_Digi_station   = rId.station();   // Station id : For Barrel: the four groups of chambers at same r (distance from beam axis) and increasing phi / For Endcap: the three groups of chambers at same z (distance from interaction point), i.e. the disk
+        b_RPC_Digi_ring      = rId.ring();      // Ring id: Wheel number in Barrel (from -2 to +2) Ring Number in Endcap (from 1 to 3) Ring has a different meaning in Barrel and Endcap! In Barrel it is wheel, in Endcap Ring has a different meaning in
+        b_RPC_Digi_sector    = rId.sector();    // Sector id: the group of chambers at same phi (and increasing r) 
+        b_RPC_Digi_subSector = rId.subsector(); // subSector id : some sectors are divided along the phi direction in subsectors (from 1 to 4 in Barrel, from 1 to 6 in Endcap) 
+        b_RPC_Digi_layer     = rId.layer();     // Layer id: each station can have two layers of chambers: layer 1 is the inner chamber and layer 2 is the outer chamber (when present) // Only in Barrel: RB1 and RB2
+        b_RPC_Digi_region    = rId.region();    // region : 0 for barrel +/-1 for +/- endcap
+        b_RPC_Digi_isIRPC    = (int)roll->isIRPC();
+        //cout << b_RPC_Digi_region << " " << rId.region() << endl;
         t_RPC_digi->Fill();
         b_nRPCDigis++;
       }
@@ -747,8 +811,17 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       for (auto rec = rpcRec; rec != recRange.second; ++rec) {
         auto recLd = rec->localPosition();
         auto gp = roll->toGlobal(recLd);
-        b_RPC_RecHit_eta = gp.eta();
-        b_RPC_RecHit_roll = roll_;
+        b_RPC_RecHit_eta       = gp.eta();
+        b_RPC_RecHit_phi       = gp.phi();
+        b_RPC_RecHit_roll      = roll_;
+        b_RPC_RecHit_station   = rId.station();
+        b_RPC_RecHit_ring      = rId.ring();
+        b_RPC_RecHit_sector    = rId.sector();
+        b_RPC_RecHit_subSector = rId.subsector();
+        b_RPC_RecHit_layer     = rId.layer();
+        b_RPC_RecHit_region    = rId.region();
+        b_RPC_RecHit_isIRPC    = (int)roll->isIRPC();
+
         b_nRPCRecHits++;
         t_RPC_rec->Fill();
       }
@@ -763,16 +836,32 @@ HGCalSimTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   }
 
 
+  /* gen Muon */
+  for (TrackingParticleCollection::size_type i=0; i<simHandle->size(); i++) {
+    TrackingParticleRef simRef(simHandle, i);
+    const TrackingParticle* simTP = simRef.get();
+    b_genMuon_pt  = simTP->pt();
+    b_genMuon_eta = simTP->eta();
+    b_genMuon_phi = simTP->phi();
+    bool isSignalMuon = abs(simTP->pdgId())==13 && !simTP->genParticles().empty() && (simTP->eventId().event() == 0) && (simTP->eventId().bunchCrossing() == 0);
+    if (!isSignalMuon) continue;
+    t_genMuon->Fill();
+  }
   /* reco Muon */
   for(size_t i = 0; i < muonHandle->size(); ++i) {
     initMuonValue();
     edm::RefToBase<reco::Muon> muRef = muonHandle->refAt(i);
     const reco::Muon* mu = muRef.get();
-    b_muon_isTight  = muon::isTightMuon(*mu, pv0);
-    b_muon_isMedium = muon::isMediumMuon(*mu);
-    b_muon_isLoose  = muon::isLooseMuon(*mu);
-    b_muon_pt       = mu->pt();
-    b_muon_eta      = mu->eta();
+    b_muon_isTight              = muon::isTightMuon(*mu, pv0);
+    b_muon_isMedium             = muon::isMediumMuon(*mu);
+    b_muon_isLoose              = muon::isLooseMuon(*mu);
+    b_muon_pt                   = mu->pt();
+    b_muon_eta                  = mu->eta();
+    b_muon_phi                  = mu->phi();
+    b_muon_isGlobalMuon         = mu->isGlobalMuon();
+    b_muon_isTrackerMuon        = mu->isTrackerMuon();
+    b_muon_isME0Muon            = mu->isME0Muon();
+    b_muon_nMatchedStationLayer = mu->numberOfMatchedStations();
     t_Muon->Fill();
   }
 
@@ -847,7 +936,8 @@ void HGCalSimTest::beginRun(const edm::Run& run, const edm::EventSetup& iSetup){
     auto iEta    = std::to_string(detId.roll());
     auto station = std::to_string(detId.station()); // for now, always 1
     auto ring    = std::to_string(0);//std::to_string(detId.ring());
-    const string rollName = "Region_"+region+"_station_"+station+"_ring_"+ring+"_CH_"+ch+"_iEta_"+iEta;
+    auto layer   = std::to_string(detId.layer());
+    const string rollName = "Region_"+region+"_station_"+station+"_ring_"+ring+"_CH_"+ch+"_layer_"+layer+"_iEta_"+iEta;
     const TrapezoidalStripTopology* top_(dynamic_cast<const TrapezoidalStripTopology*>(&(roll->topology())));
     const float striplength(top_->stripLength());
     const float pitch(roll->pitch());
@@ -867,7 +957,8 @@ void HGCalSimTest::beginRun(const edm::Run& run, const edm::EventSetup& iSetup){
     auto iEta    = std::to_string(detId.roll());
     auto station = std::to_string(detId.station());
     auto ring    = std::to_string(detId.ring());
-    const string rollName = "Region_"+region+"_station_"+station+"_ring_"+ring+"_CH_"+ch+"_iEta_"+iEta;
+    auto layer   = std::to_string(detId.layer());
+    const string rollName = "Region_"+region+"_station_"+station+"_ring_"+ring+"_CH_"+ch+"_layer_"+layer+"_iEta_"+iEta;
     const TrapezoidalStripTopology* top_(dynamic_cast<const TrapezoidalStripTopology*>(&(roll->topology())));
     const float striplength(top_->stripLength());
     const float pitch(roll->pitch());
@@ -886,7 +977,8 @@ void HGCalSimTest::beginRun(const edm::Run& run, const edm::EventSetup& iSetup){
     auto ch      = std::to_string(detId.chamber());
     auto ring    = std::to_string(detId.ring());
     auto station = std::to_string(detId.station());
-    const string name = "Endcap_"+endcap+"_Station_"+station+"_ring_"+ring+"_CH_"+ch;
+    auto layer   = std::to_string(detId.layer());
+    const string name = "Endcap_"+endcap+"_station_"+station+"_ring_"+ring+"_CH_"+ch+"_layer_"+layer;
     const RadialStripTopology* top_(dynamic_cast<const RadialStripTopology*>(&(ly->topology())));
     const float striplength(top_->stripLength());
     const float pitch(ly->geometry()->stripPitch());
@@ -909,13 +1001,15 @@ void HGCalSimTest::beginRun(const edm::Run& run, const edm::EventSetup& iSetup){
     hRPCArea_->Fill(iRPC, width*height);
   }
 
-
 }
 void HGCalSimTest::endRun(Run const&, EventSetup const&){}
 
 void HGCalSimTest::initMuonValue() {
-  b_muon_isTight = -1; b_muon_isMedium = -1; b_muon_isLoose = -1;
-  b_muon_pt = -9; b_muon_eta = -9;
+  b_genMuon_pt  = -9; b_genMuon_eta = -9; b_genMuon_phi = -9;
+
+  b_muon_isTight = -1; b_muon_isMedium = -1; b_muon_isLoose = -1; b_muon_isTrackerMuon = -1; b_muon_isGlobalMuon = -1; b_muon_isME0Muon = -1;
+  b_muon_pt = -9; b_muon_eta = -9; b_muon_phi = -9;
+  b_muon_nMatchedStationLayer = -9;
 
 }
 void HGCalSimTest::initValue() {
@@ -927,37 +1021,37 @@ void HGCalSimTest::initValue() {
 
   /*ME0 digi*/
   b_ME0_Digi_chamber = -9; b_ME0_Digi_layer = -9; b_ME0_Digi_etaPartition = -9; b_ME0_Digi_bx = -999;
-  b_ME0_Digi_eta = -9;
+  b_ME0_Digi_eta = -9; b_ME0_Digi_phi = -9;
   /*ME0 seg*/
   b_ME0_Seg_chamber = -9; b_ME0_Seg_layer = -9; b_ME0_Seg_nRecHits = -9;
-  b_ME0_Seg_eta = -9;
+  b_ME0_Seg_eta = -9; b_ME0_Seg_phi = -9;
   /*ME0 rechit*/
   b_ME0_RecHit_etaPartition = -9;
-  b_ME0_RecHit_eta = -9;
+  b_ME0_RecHit_eta = -9; b_ME0_RecHit_phi = -9;
 
   /*CSC seg*/
   b_CSC_Seg_chamber = -9; b_CSC_Seg_layer = -9; b_CSC_Seg_station = -9; b_CSC_Seg_ring = -9; b_CSC_Seg_nRecHits = -9;
-  b_CSC_Seg_eta = -9;
+  b_CSC_Seg_eta = -9; b_CSC_Seg_phi = -9;
   /*CSC rechit*/
   b_CSC_2DRecHit_chamber = -9; b_CSC_2DRecHit_layer = -9; b_CSC_2DRecHit_station = -9; b_CSC_2DRecHit_ring = -9; b_CSC_2DRecHit_etaPartition = -9;
-  b_CSC_2DRecHit_eta = -9;
+  b_CSC_2DRecHit_eta = -9; b_CSC_2DRecHit_phi = -9;
 
   /*GEM digi*/
   b_GEM_Digi_chamber = -9; b_GEM_Digi_layer = -9; b_GEM_Digi_station = -9; b_GEM_Digi_ring = -9; b_GEM_Digi_etaPartition = -9; b_GEM_Digi_bx = -999;
-  b_GEM_Digi_eta = -9;
+  b_GEM_Digi_eta = -9; b_GEM_Digi_phi = -9;
   /*GEM seg*/
   b_GEM_Seg_chamber = -9; b_GEM_Seg_layer = -9; b_GEM_Seg_station = -9; b_GEM_Seg_ring = -9; b_GEM_Seg_nRecHits = -9;
-  b_GEM_Seg_eta = -9;
+  b_GEM_Seg_eta = -9; b_GEM_Seg_phi = -9;
   /*GEM rechit*/
   b_GEM_RecHit_chamber = -9; b_GEM_RecHit_layer = -9; b_GEM_RecHit_station = -9; b_GEM_RecHit_ring = -9; b_GEM_RecHit_etaPartition = -9; b_GEM_RecHit_bx = -999;
-  b_GEM_RecHit_eta = -9;
+  b_GEM_RecHit_eta = -9; b_GEM_RecHit_phi = -9;;
 
   /* DT digi*/
   b_DT_Digi_chamber = -9; b_DT_Digi_layer = -9; b_DT_Digi_superLayer = -9; b_DT_Digi_wheel = -9; b_DT_Digi_sector = -9; b_DT_Digi_station = -9; b_DT_Digi_wire = -9;
-  b_DT_Digi_eta = -9;
+  b_DT_Digi_eta = -9; //b_DT_Digi_phi = -9;
   /* DT seg*/
   b_DT_4DSeg_chamber = -9; b_DT_4DSeg_wheel = -9; b_DT_4DSeg_sector = -9; b_DT_4DSeg_station = -9; b_DT_4DSeg_nRecHits = -9;
-  b_DT_4DSeg_eta = -9;
+  b_DT_4DSeg_eta = -9; b_DT_4DSeg_phi = -9;
   b_DT_4DSeg_hasZed = -1;
   /* DT rechit*/
   b_DT_RecHit_chamber = -9; b_DT_RecHit_layer = -9; b_DT_RecHit_superLayer = -9; b_DT_RecHit_wheel = -9; b_DT_RecHit_sector = -9; b_DT_RecHit_station = -9; b_DT_RecHit_wire = -9;
@@ -965,11 +1059,11 @@ void HGCalSimTest::initValue() {
 
   /*RPC digi*/
   b_RPC_Digi_chamber = -9; b_RPC_Digi_layer = -9; b_RPC_Digi_station = -9; b_RPC_Digi_ring = -9; b_RPC_Digi_roll = -9; b_RPC_Digi_sector = -9; b_RPC_Digi_subSector = -9; b_RPC_Digi_region = -9;
-  b_RPC_Digi_eta = -9;
+  b_RPC_Digi_eta = -9; b_RPC_Digi_phi = -9;
   b_RPC_Digi_isIRPC = -1;
   /*RPC rechit*/
   b_RPC_RecHit_chamber = -9; b_RPC_RecHit_layer = -9; b_RPC_RecHit_station = -9; b_RPC_RecHit_ring = -9; b_RPC_RecHit_roll = -9; b_RPC_RecHit_sector = -9; b_RPC_RecHit_subSector = -9; b_RPC_RecHit_region = -9;
-  b_RPC_RecHit_eta = -9;
+  b_RPC_RecHit_eta = -9; b_RPC_RecHit_phi = -9;
   b_RPC_RecHit_isIRPC = -1;
 
 }

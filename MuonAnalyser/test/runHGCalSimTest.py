@@ -19,7 +19,8 @@ process.maxEvents = cms.untracked.PSet(
 process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring())
 process.source.skipEvents = cms.untracked.uint32(0)
 
-process.source.fileNames.append('/store/user/yekang/CRAB_PrivateMC/HGCalStainless_default_me0_singleNu_RECO/190129_065738/0000/singleNu_GEN-SIM-DIGI_10.root')
+#process.source.fileNames.append('/store/user/yekang/CRAB_PrivateMC/HGCalStainless_default_me0_singleNu_RECO/190129_065738/0000/singleNu_GEN-SIM-DIGI_10.root')
+process.source.fileNames.append('/store/user/yekang/CRAB_PrivateMC/HGCalStainless_default_me0_singlePion_RECO_v2/190213_061518/0000/singlePion_GEN-SIM-DIGI_10.root')
 #process.source.fileNames.append('/store/user/yekang/me0/tenMu_modified/tenMu_GEN-SIM-DIGI_050.root')
 #process.source.fileNames.append('/store/user/yekang/me0/tenMu_default/tenMu_GEN-SIM-DIGI_060.root')
 #from glob import glob
@@ -48,6 +49,7 @@ process.HGCalSimTest = cms.EDAnalyzer('HGCalSimTest',
     dtRecHits = cms.InputTag("dt1DRecHits"),
     rpcDigis = cms.InputTag("simMuonRPCDigis"),
     rpcRecHits = cms.InputTag("rpcRecHits"),
+    simLabel = cms.InputTag("mix","MergedTrackTruth"),
     muonLabel = cms.InputTag("muons"),
     primaryVertex = cms.InputTag('offlinePrimaryVertices'),
 
