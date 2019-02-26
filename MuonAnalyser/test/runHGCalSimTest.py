@@ -56,9 +56,18 @@ process.MuonTrackAnalyser = cms.EDAnalyzer('MuonTrackAnalyser',
     simLabel = cms.InputTag("mix","MergedTrackTruth"),
     muonLabel = cms.InputTag("muons"),
     primaryVertex = cms.InputTag('offlinePrimaryVertices'),
-
 )
 
-process.p = cms.Path(process.MuonDetHitAnalyser + process.MuonTrackAnalyser)
+process.MuonSimAnalyser = cms.EDAnalyzer('MuonSimAnalyser',
+    verboseSimHit = cms.untracked.int32(1),
+    simInputLabel = cms.untracked.string('g4SimHits'),
+    simMuOnlyGEM = cms.untracked.bool(True),
+    #verboseSimHit = cms.untracked.int32(1),
+    #simInputLabel = cms.InputTag('g4SimHits',"MuonGEMHits"),
+    simTrackCollection = cms.InputTag('g4SimHits'),
+    simVertexCollection = cms.InputTag('g4SimHits')
+)
+
+process.p = cms.Path(process.MuonDetHitAnalyser + process.MuonTrackAnalyser + process.MuonSimAnalyser)
 
 process.schedule = cms.Schedule(process.p)
