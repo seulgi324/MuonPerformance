@@ -65,6 +65,7 @@
 #include "TGraphAsymmErrors.h"
 #include "TLorentzVector.h"
 #include "TTree.h"
+#include "TDatabasePDG.h"
 
 using namespace std;
 using namespace edm;
@@ -99,17 +100,21 @@ private:
   TTree *t_GEM_simhit;
   int   b_GEM_SimHit_region, b_GEM_SimHit_station, b_GEM_SimHit_ring, b_GEM_SimHit_chamber, b_GEM_SimHit_layer, b_GEM_SimHit_etaPartition, b_GEM_SimHit_pdgId;
   float b_GEM_SimHit_pt,     b_GEM_SimHit_eta,     b_GEM_SimHit_phi; 
+
 };
 
 MuonSimAnalyser::MuonSimAnalyser(const edm::ParameterSet& iConfig)
 { 
 
-  std::string simInputLabel_ = iConfig.getUntrackedParameter<std::string>("simInputLabel");
+  //std::string simInputLabel_ = iConfig.getUntrackedParameter<std::string>("simInputLabel");
 
-  simHitsToken_ = consumes<edm::PSimHitContainer>(edm::InputTag(simInputLabel_,"MuonGEMHits"));
+  auto simInputLabel_ = iConfig.getParameter<edm::InputTag>("simInputLabel");
+  simHitsToken_ = consumes<edm::PSimHitContainer>(simInputLabel_);//,"MuonGEMHits"));
   simTracksToken_ = consumes< edm::SimTrackContainer >(iConfig.getParameter<edm::InputTag>("simTrackCollection"));
   simVerticesToken_ = consumes< edm::SimVertexContainer >(iConfig.getParameter<edm::InputTag>("simVertexCollection"));
   cfg_ = iConfig;
+
+
 
   t_event = fs->make<TTree>("Event", "Event");
   t_event->Branch("nGEMSimHits",   &b_nGEMSimHits,   "nGEMSimHits/I");
@@ -139,7 +144,7 @@ MuonSimAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
   /* GEM Geometry */
   edm::ESHandle<GEMGeometry> hGEMGeom;
   iSetup.get<MuonGeometryRecord>().get(hGEMGeom);
-  const GEMGeometry* GEMGeometry_ = &*hGEMGeom;
+  //const GEMGeometry* GEMGeometry_ = &*hGEMGeom;
 
   edm::Handle<edm::PSimHitContainer> simHits;
   edm::Handle<edm::SimTrackContainer> simTracks;
@@ -151,14 +156,25 @@ MuonSimAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
   if (!simHits.isValid()) return;
 
   initValue();
-
   const edm::PSimHitContainer & sim_hits = *simHits.product();
 
   /* GEM */
   for (auto& sh : sim_hits){
     GEMDetId det_id = sh.detUnitId();
     auto vec = sh.momentumAtEntry();
+    std::cout << "chk " << std::endl;
+
     b_GEM_SimHit_pdgId        = sh.particleType();
+
+    TDatabasePDG *pdg = TDatabasePDG::Instance();
+
+    if (auto particle_pdg = pdg->GetParticle(b_GEM_SimHit_pdgId)) {
+      std::cout << particle_pdg->GetName() << " " << b_GEM_SimHit_pdgId << std::endl;    
+    } else {
+      std::cout << "Cannot understand!!! " << b_GEM_SimHit_pdgId << std::endl;
+    }
+
+
     b_GEM_SimHit_pt           = vec.perp();
     b_GEM_SimHit_eta          = vec.eta();
     b_GEM_SimHit_phi          = sh.phiAtEntry();

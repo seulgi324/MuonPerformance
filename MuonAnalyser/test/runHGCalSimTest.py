@@ -20,8 +20,8 @@ process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring())
 process.source.skipEvents = cms.untracked.uint32(0)
 
 #process.source.fileNames.append('/store/user/yekang/CRAB_PrivateMC/HGCalStainless_default_me0_singleNu_RECO/190129_065738/0000/singleNu_GEN-SIM-DIGI_10.root')
-#process.source.fileNames.append('/store/user/yekang/CRAB_PrivateMC/HGCalStainless_default_me0_singlePion_RECO_v2/190213_061518/0000/singlePion_GEN-SIM-DIGI_10.root')
-process.source.fileNames.append('/store/user/yekang/CRAB_PrivateMC/HGCalStainless_default_me0_singleNu_RECO/190129_065738/0000/singleNu_GEN-SIM-DIGI_10.root')
+process.source.fileNames.append('/store/user/yekang/CRAB_PrivateMC/HGCalStainless_default_MinBias/190213_140302/0000/step1_10.root')
+#process.source.fileNames.append('/store/user/yekang/CRAB_PrivateMC/HGCalStainless_default_me0_singleNu_RECO/190129_065738/0000/singleNu_GEN-SIM-DIGI_10.root')
 #process.source.fileNames.append('/store/user/yekang/me0/tenMu_modified/tenMu_GEN-SIM-DIGI_050.root')
 #process.source.fileNames.append('/store/user/yekang/me0/tenMu_default/tenMu_GEN-SIM-DIGI_060.root')
 #from glob import glob
@@ -59,15 +59,16 @@ process.MuonTrackAnalyser = cms.EDAnalyzer('MuonTrackAnalyser',
 )
 
 process.MuonSimAnalyser = cms.EDAnalyzer('MuonSimAnalyser',
-    verboseSimHit = cms.untracked.int32(1),
-    simInputLabel = cms.untracked.string('g4SimHits'),
-    simMuOnlyGEM = cms.untracked.bool(True),
+#    verboseSimHit = cms.untracked.int32(1),
+    simInputLabel = cms.InputTag('g4SimHits', "MuonGEMHits"),
+#    simMuOnlyGEM = cms.untracked.bool(True),
     #verboseSimHit = cms.untracked.int32(1),
     #simInputLabel = cms.InputTag('g4SimHits',"MuonGEMHits"),
     simTrackCollection = cms.InputTag('g4SimHits'),
     simVertexCollection = cms.InputTag('g4SimHits')
 )
 
-process.p = cms.Path(process.MuonDetHitAnalyser + process.MuonTrackAnalyser + process.MuonSimAnalyser)
+#process.p = cms.Path(process.MuonDetHitAnalyser + process.MuonTrackAnalyser + process.MuonSimAnalyser)
+process.p = cms.Path(process.MuonSimAnalyser)
 
 process.schedule = cms.Schedule(process.p)
