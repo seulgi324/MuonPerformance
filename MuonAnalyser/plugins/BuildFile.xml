@@ -24,5 +24,6 @@
 <use name="Geometry/CSCGeometry"/>
 <use name="PhysicsTools/PatUtils"/>
 <use name="JetMETCorrections/JetCorrector"/>
+<lib name="EG"/>
 <flags EDM_PLUGIN="1"/>
 <flags CXXFLAGS="-g"/>
