@@ -20,10 +20,9 @@ process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring())
 process.source.skipEvents = cms.untracked.uint32(0)
 
 #process.source.fileNames.append('/store/user/yekang/CRAB_PrivateMC/HGCalStainless_default_me0_singleNu_RECO/190129_065738/0000/singleNu_GEN-SIM-DIGI_10.root')
-process.source.fileNames.append('/store/user/yekang/CRAB_PrivateMC/HGCalStainless_default_MinBias/190213_140302/0000/step1_10.root')
-#process.source.fileNames.append('/store/user/yekang/CRAB_PrivateMC/HGCalStainless_default_me0_singleNu_RECO/190129_065738/0000/singleNu_GEN-SIM-DIGI_10.root')
-#process.source.fileNames.append('/store/user/yekang/me0/tenMu_modified/tenMu_GEN-SIM-DIGI_050.root')
-#process.source.fileNames.append('/store/user/yekang/me0/tenMu_default/tenMu_GEN-SIM-DIGI_060.root')
+#process.source.fileNames.append('/store/user/yekang/CRAB_PrivateMC/HGCalStainless_default_MinBias/190213_140302/0000/step1_10.root')
+#process.source.fileNames.append('root://uosaf0007.sscc.uos.ac.kr:1094//xrootd/store/user/yekang/CRAB_PrivateMC/HGCalStainless_default_me0_diMu_RECO/190225_172244/0000/diMu_GEN-SIM-DIGI_951.root')
+process.source.fileNames.append('root://uosaf0007.sscc.uos.ac.kr:1094//xrootd/store/user/yekang/CRAB_PrivateMC/HGCalStainless_modified_me0_diMu_RECO/190225_172318/0000/diMu_GEN-SIM-DIGI_489.root')
 #from glob import glob
 #process.source.fileNames.append('file:/cms/ldap_home/yckang/me0/CMSSW_10_4_0/src/MuonPerformance/MuonAnalyser/test/tenMu_GEN-SIM-DIGI.root')
 
@@ -60,7 +59,8 @@ process.MuonTrackAnalyser = cms.EDAnalyzer('MuonTrackAnalyser',
 
 process.MuonSimAnalyser = cms.EDAnalyzer('MuonSimAnalyser',
 #    verboseSimHit = cms.untracked.int32(1),
-    simInputLabel = cms.InputTag('g4SimHits', "MuonGEMHits"),
+    ME0SimInputLabel = cms.InputTag('g4SimHits', "MuonME0Hits"),
+    GEMSimInputLabel = cms.InputTag('g4SimHits', "MuonGEMHits"),
 #    simMuOnlyGEM = cms.untracked.bool(True),
     #verboseSimHit = cms.untracked.int32(1),
     #simInputLabel = cms.InputTag('g4SimHits',"MuonGEMHits"),
@@ -68,7 +68,7 @@ process.MuonSimAnalyser = cms.EDAnalyzer('MuonSimAnalyser',
     simVertexCollection = cms.InputTag('g4SimHits')
 )
 
-#process.p = cms.Path(process.MuonDetHitAnalyser + process.MuonTrackAnalyser + process.MuonSimAnalyser)
-process.p = cms.Path(process.MuonSimAnalyser)
+process.p = cms.Path(process.MuonDetHitAnalyser + process.MuonTrackAnalyser + process.MuonSimAnalyser)
+#process.p = cms.Path(process.MuonSimAnalyser)
 
 process.schedule = cms.Schedule(process.p)

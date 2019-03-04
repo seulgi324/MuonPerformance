@@ -23,6 +23,11 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
+// ME0
+#include "DataFormats/MuonDetId/interface/ME0DetId.h"
+#include "Geometry/GEMGeometry/interface/ME0Geometry.h"
+#include "Geometry/GEMGeometry/interface/ME0EtaPartition.h"
+#include "Geometry/GEMGeometry/interface/ME0EtaPartitionSpecs.h"
 // GEM
 #include "DataFormats/MuonDetId/interface/GEMDetId.h"
 #include "Geometry/GEMGeometry/interface/GEMGeometry.h"
@@ -87,14 +92,20 @@ private:
 
   // ----------member data ---------------------------
   edm::ParameterSet cfg_;
-  edm::EDGetToken simHitsToken_;
+  edm::EDGetToken ME0SimHitsToken_;
+  edm::EDGetToken GEMSimHitsToken_;
   edm::EDGetToken simTracksToken_;
   edm::EDGetToken simVerticesToken_;
   
   edm::Service<TFileService> fs;
 
   TTree *t_event;
-  int b_nGEMSimHits;
+  int b_nME0SimHits, b_nGEMSimHits;
+
+  /* ME */
+  TTree *t_ME0_simhit;
+  int   b_ME0_SimHit_region, b_ME0_SimHit_chamber, b_ME0_SimHit_layer, b_ME0_SimHit_etaPartition, b_ME0_SimHit_pdgId;
+  float b_ME0_SimHit_pt,     b_ME0_SimHit_eta,     b_ME0_SimHit_phi;
 
   /* GEM */
   TTree *t_GEM_simhit;
@@ -106,10 +117,8 @@ private:
 MuonSimAnalyser::MuonSimAnalyser(const edm::ParameterSet& iConfig)
 { 
 
-  //std::string simInputLabel_ = iConfig.getUntrackedParameter<std::string>("simInputLabel");
-
-  auto simInputLabel_ = iConfig.getParameter<edm::InputTag>("simInputLabel");
-  simHitsToken_ = consumes<edm::PSimHitContainer>(simInputLabel_);//,"MuonGEMHits"));
+  ME0SimHitsToken_ = consumes<edm::PSimHitContainer>(iConfig.getParameter<edm::InputTag>("ME0SimInputLabel"));
+  GEMSimHitsToken_ = consumes<edm::PSimHitContainer>(iConfig.getParameter<edm::InputTag>("GEMSimInputLabel"));
   simTracksToken_ = consumes< edm::SimTrackContainer >(iConfig.getParameter<edm::InputTag>("simTrackCollection"));
   simVerticesToken_ = consumes< edm::SimVertexContainer >(iConfig.getParameter<edm::InputTag>("simVertexCollection"));
   cfg_ = iConfig;
@@ -117,7 +126,19 @@ MuonSimAnalyser::MuonSimAnalyser(const edm::ParameterSet& iConfig)
 
 
   t_event = fs->make<TTree>("Event", "Event");
+  t_event->Branch("nME0SimHits",   &b_nME0SimHits,   "nME0SimHits/I");
   t_event->Branch("nGEMSimHits",   &b_nGEMSimHits,   "nGEMSimHits/I");
+
+  /*ME0*/
+  t_ME0_simhit = fs->make<TTree>("ME0_SimHit", "ME0_SimHit");
+  t_ME0_simhit->Branch("SimHit_pdgId",        &b_ME0_SimHit_pdgId,        "SimHit_pdgId/I");
+  t_ME0_simhit->Branch("SimHit_pt",           &b_ME0_SimHit_pt,           "SimHit_pt/F");
+  t_ME0_simhit->Branch("SimHit_eta",          &b_ME0_SimHit_eta,          "SimHit_eta/F");
+  t_ME0_simhit->Branch("SimHit_phi",          &b_ME0_SimHit_phi,          "SimHit_phi/F");
+  t_ME0_simhit->Branch("SimHit_region",       &b_ME0_SimHit_region,       "SimHit_region/I");
+  t_ME0_simhit->Branch("SimHit_chamber",      &b_ME0_SimHit_chamber,      "SimHit_chaber/I");
+  t_ME0_simhit->Branch("SimHit_layer",        &b_ME0_SimHit_layer,        "SimHit_layer/I");
+  t_ME0_simhit->Branch("SimHit_etaPartition", &b_ME0_SimHit_etaPartition, "SimHit_etaParition/I");
 
   /*GEM*/
   t_GEM_simhit = fs->make<TTree>("GEM_SimHit", "GEM_SimHit");
@@ -142,53 +163,82 @@ void
 MuonSimAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   /* GEM Geometry */
-  edm::ESHandle<GEMGeometry> hGEMGeom;
-  iSetup.get<MuonGeometryRecord>().get(hGEMGeom);
+  //edm::ESHandle<GEMGeometry> hGEMGeom;
+  //iSetup.get<MuonGeometryRecord>().get(hGEMGeom);
   //const GEMGeometry* GEMGeometry_ = &*hGEMGeom;
 
-  edm::Handle<edm::PSimHitContainer> simHits;
+  edm::Handle<edm::PSimHitContainer> ME0SimHits;
+  edm::Handle<edm::PSimHitContainer> GEMSimHits;
   edm::Handle<edm::SimTrackContainer> simTracks;
   edm::Handle<edm::SimVertexContainer> simVertices;
-  iEvent.getByToken(simHitsToken_, simHits);
+  iEvent.getByToken(ME0SimHitsToken_, ME0SimHits);
+  iEvent.getByToken(GEMSimHitsToken_, GEMSimHits);
   iEvent.getByToken(simTracksToken_, simTracks);
   iEvent.getByToken(simVerticesToken_, simVertices);
   //if ( !simHits.isValid() || !simTracks.isValid() || !simVertices.isValid()) return;
-  if (!simHits.isValid()) return;
 
   initValue();
-  const edm::PSimHitContainer & sim_hits = *simHits.product();
+
+  /* ME0 */
+  if (ME0SimHits.isValid()) {
+    const edm::PSimHitContainer & ME0_sim_hits = *ME0SimHits.product();
+    for (auto& sh : ME0_sim_hits){
+      ME0DetId det_id = sh.detUnitId();
+      auto vec = sh.momentumAtEntry();
+      b_ME0_SimHit_pdgId        = sh.particleType();
+
+      TDatabasePDG *pdg = TDatabasePDG::Instance();
+      if (auto particle_pdg = pdg->GetParticle(b_ME0_SimHit_pdgId)) {
+        std::cout << particle_pdg->GetName() << " " << b_ME0_SimHit_pdgId << std::endl;
+      } else {
+        std::cout << "Cannot understand!!! " << b_ME0_SimHit_pdgId << std::endl;
+      }
+
+      b_ME0_SimHit_pt           = vec.perp();
+      b_ME0_SimHit_eta          = vec.eta();
+      b_ME0_SimHit_phi          = sh.phiAtEntry();
+
+      b_ME0_SimHit_region       = det_id.region();
+      b_ME0_SimHit_chamber      = det_id.chamber();
+      b_ME0_SimHit_layer        = det_id.layer();
+      b_ME0_SimHit_etaPartition = det_id.roll();
+
+      ++b_nME0SimHits;
+      t_ME0_simhit->Fill();
+    }
+  } else return;
+
 
   /* GEM */
-  for (auto& sh : sim_hits){
-    GEMDetId det_id = sh.detUnitId();
-    auto vec = sh.momentumAtEntry();
-    std::cout << "chk " << std::endl;
-
-    b_GEM_SimHit_pdgId        = sh.particleType();
-
-    TDatabasePDG *pdg = TDatabasePDG::Instance();
-
-    if (auto particle_pdg = pdg->GetParticle(b_GEM_SimHit_pdgId)) {
-      std::cout << particle_pdg->GetName() << " " << b_GEM_SimHit_pdgId << std::endl;    
-    } else {
-      std::cout << "Cannot understand!!! " << b_GEM_SimHit_pdgId << std::endl;
+  if (GEMSimHits.isValid()) {
+    const edm::PSimHitContainer & GEM_sim_hits = *GEMSimHits.product();
+    for (auto& sh : GEM_sim_hits){
+      GEMDetId det_id = sh.detUnitId();
+      auto vec = sh.momentumAtEntry();
+      b_GEM_SimHit_pdgId        = sh.particleType();
+  
+      TDatabasePDG *pdg = TDatabasePDG::Instance();
+      if (auto particle_pdg = pdg->GetParticle(b_GEM_SimHit_pdgId)) {
+        std::cout << particle_pdg->GetName() << " " << b_GEM_SimHit_pdgId << std::endl;    
+      } else {
+        std::cout << "Cannot understand!!! " << b_GEM_SimHit_pdgId << std::endl;
+      }
+  
+      b_GEM_SimHit_pt           = vec.perp();
+      b_GEM_SimHit_eta          = vec.eta();
+      b_GEM_SimHit_phi          = sh.phiAtEntry();
+  
+      b_GEM_SimHit_region       = det_id.region();
+      b_GEM_SimHit_station      = det_id.station();
+      b_GEM_SimHit_ring         = det_id.ring();
+      b_GEM_SimHit_chamber      = det_id.chamber();
+      b_GEM_SimHit_layer        = det_id.layer();
+      b_GEM_SimHit_etaPartition = det_id.roll();
+  
+      ++b_nGEMSimHits;
+      t_GEM_simhit->Fill();
     }
-
-
-    b_GEM_SimHit_pt           = vec.perp();
-    b_GEM_SimHit_eta          = vec.eta();
-    b_GEM_SimHit_phi          = sh.phiAtEntry();
-
-    b_GEM_SimHit_region       = det_id.region();
-    b_GEM_SimHit_station      = det_id.station();
-    b_GEM_SimHit_ring         = det_id.ring();
-    b_GEM_SimHit_chamber      = det_id.chamber();
-    b_GEM_SimHit_layer        = det_id.layer();
-    b_GEM_SimHit_etaPartition = det_id.roll();
-
-    ++b_nGEMSimHits;
-    t_GEM_simhit->Fill();
-  }
+  } else return;
   t_event->Fill();
 }
 
@@ -200,11 +250,15 @@ void MuonSimAnalyser::beginRun(const edm::Run& run, const edm::EventSetup& iSetu
 void MuonSimAnalyser::endRun(Run const&, EventSetup const&){}
 
 void MuonSimAnalyser::initValue() {
-  b_nGEMSimHits = -1;
+  b_nME0SimHits = -1; b_nGEMSimHits = -1;
+
+  /*ME0 */
+  b_ME0_SimHit_region = -9; b_ME0_SimHit_chamber = -9; b_ME0_SimHit_layer = -9; b_ME0_SimHit_etaPartition = -9; b_ME0_SimHit_pdgId = -99;
+  b_ME0_SimHit_pt     = -9; b_ME0_SimHit_eta     = -9; b_ME0_SimHit_phi  = -9;
+
   /*GEM */
   b_GEM_SimHit_region = -9; b_GEM_SimHit_station = -9; b_GEM_SimHit_ring = -9; b_GEM_SimHit_chamber = -9; b_GEM_SimHit_layer = -9; b_GEM_SimHit_etaPartition = -9; b_GEM_SimHit_pdgId = -99;
   b_GEM_SimHit_pt     = -9; b_GEM_SimHit_eta     = -9; b_GEM_SimHit_phi  = -9;
-
 }
 
 //define this as a plug-in
