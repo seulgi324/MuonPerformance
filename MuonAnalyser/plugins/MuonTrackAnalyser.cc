@@ -112,6 +112,7 @@ private:
 
   void initMuonValue();
   void initValue();
+  bool isME0MuonSelNew(reco::Muon muon, double dEtaCut, double dPhiCut, double dPhiBendCut);
 
   // ----------member data ---------------------------
   edm::EDGetTokenT<ME0SegmentCollection>       me0Segments_;
@@ -131,6 +132,8 @@ private:
   edm::EDGetTokenT<std::vector<reco::Vertex> > vtxToken_;
   
   edm::Service<TFileService> fs;
+
+  const ME0Geometry* ME0Geometry_;
 
   TTree *t_event;
   int b_run, b_lumi, b_latency;
@@ -159,11 +162,11 @@ private:
   /* Muon */
   TTree *t_genMuon;
   float b_genMuon_pt,      b_genMuon_eta,      b_genMuon_phi;
-  int   b_genMuon_isTight, b_genMuon_isMedium, b_genMuon_isLoose, b_genMuon_isTracker, b_genMuon_isGlobal, b_genMuon_isME0, b_genMuon_nMatchedStationLayer;
+  int   b_genMuon_isTight, b_genMuon_isMedium, b_genMuon_isLoose, b_genMuon_isTracker, b_genMuon_isGlobal, b_genMuon_isME0, b_genMuon_isLooseME0, b_genMuon_nMatchedStationLayer;
 
   TTree *t_Muon;
   float b_muon_pt,      b_muon_eta,      b_muon_phi;
-  int   b_muon_isTight, b_muon_isMedium, b_muon_isLoose, b_muon_isTracker, b_muon_isGlobal, b_muon_isME0, b_muon_nMatchedStationLayer;
+  int   b_muon_isTight, b_muon_isMedium, b_muon_isLoose, b_muon_isTracker, b_muon_isGlobal, b_muon_isME0, b_muon_isLooseME0, b_muon_nMatchedStationLayer;
 };
 
 MuonTrackAnalyser::MuonTrackAnalyser(const edm::ParameterSet& iConfig)
@@ -240,6 +243,7 @@ MuonTrackAnalyser::MuonTrackAnalyser(const edm::ParameterSet& iConfig)
   t_genMuon->Branch("isTracker",            &b_genMuon_isTracker,            "isTracker/I");
   t_genMuon->Branch("isGlobal",             &b_genMuon_isGlobal,             "isGlobal/I");
   t_genMuon->Branch("isME0",                &b_genMuon_isME0,                "isME0/I");
+  t_genMuon->Branch("isLooseME0",           &b_genMuon_isLooseME0,           "isLooseME0/I");
   t_genMuon->Branch("isTight",              &b_genMuon_isTight,              "isTight/I");
   t_genMuon->Branch("isMedium",             &b_genMuon_isMedium,             "isMedium/I");
   t_genMuon->Branch("isLoose",              &b_genMuon_isLoose,              "isLoose/I");
@@ -252,6 +256,7 @@ MuonTrackAnalyser::MuonTrackAnalyser(const edm::ParameterSet& iConfig)
   t_Muon->Branch("isTracker",            &b_muon_isTracker,            "isTracker/I");
   t_Muon->Branch("isGlobal",             &b_muon_isGlobal,             "isGlobal/I");
   t_Muon->Branch("isME0",                &b_muon_isME0,                "isME0/I");
+  t_Muon->Branch("isLooseME0",           &b_muon_isLooseME0,           "isLooseME0/I");
   t_Muon->Branch("isTight",              &b_muon_isTight,              "isTight/I");
   t_Muon->Branch("isMedium",             &b_muon_isMedium,             "isMedium/I");
   t_Muon->Branch("isLoose",              &b_muon_isLoose,              "isLoose/I");
@@ -267,7 +272,7 @@ MuonTrackAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 {
   edm::ESHandle<ME0Geometry> hME0Geom;
   iSetup.get<MuonGeometryRecord>().get(hME0Geom);
-  const ME0Geometry* ME0Geometry_ = &*hME0Geom;
+  ME0Geometry_ = &*hME0Geom;
 
   /* ME0 Geometry */
   edm::Handle<ME0SegmentCollection> me0Segments;
@@ -418,6 +423,12 @@ MuonTrackAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     initMuonValue();
     edm::RefToBase<reco::Muon> muRef = muonHandle->refAt(i);
     const reco::Muon* mu = muRef.get();
+
+    double mom = mu->p();
+    double dPhiCut_ = std::min(std::max(1.2/mom,1.2/100),0.056);
+    double dPhiBendCut_ = std::min(std::max(0.2/mom,0.2/100),0.0096);
+    b_muon_isLooseME0           = isME0MuonSelNew(*mu, 0.077, dPhiCut_, dPhiBendCut_);
+
     b_muon_isTight              = muon::isTightMuon(*mu, pv0);
     b_muon_isMedium             = muon::isMediumMuon(*mu);
     b_muon_isLoose              = muon::isLooseMuon(*mu);
@@ -445,7 +456,7 @@ void MuonTrackAnalyser::endRun(Run const&, EventSetup const&){}
 void MuonTrackAnalyser::initMuonValue() {
   b_genMuon_pt  = -9; b_genMuon_eta = -9; b_genMuon_phi = -9;
 
-  b_muon_isTight = -1; b_muon_isMedium = -1; b_muon_isLoose = -1; b_muon_isTracker = -1; b_muon_isGlobal = -1; b_muon_isME0 = -1;
+  b_muon_isTight = -1; b_muon_isMedium = -1; b_muon_isLoose = -1; b_muon_isTracker = -1; b_muon_isGlobal = -1; b_muon_isME0 = -1; b_muon_isLooseME0 = -1;
   b_muon_pt = -9; b_muon_eta = -9; b_muon_phi = -9;
   b_muon_nMatchedStationLayer = -9;
 
@@ -474,5 +485,55 @@ void MuonTrackAnalyser::initValue() {
   b_DT_4DSeg_hasZed = -1;
 }
 
+bool MuonTrackAnalyser::isME0MuonSelNew(reco::Muon muon, double dEtaCut, double dPhiCut, double dPhiBendCut)
+{
+  bool result = false;
+  bool isME0 = muon.isME0Muon();
+
+  if(isME0){
+
+    double deltaEta = 999;
+    double deltaPhi = 999;
+    double deltaPhiBend = 999;
+
+    const std::vector<reco::MuonChamberMatch>& chambers = muon.matches();
+    for( std::vector<reco::MuonChamberMatch>::const_iterator chamber = chambers.begin(); chamber != chambers.end(); ++chamber ){
+
+      if (chamber->detector() == 5){
+
+        for ( std::vector<reco::MuonSegmentMatch>::const_iterator segment = chamber->me0Matches.begin(); segment != chamber->me0Matches.end(); ++segment ){
+
+          LocalPoint trk_loc_coord(chamber->x, chamber->y, 0);
+          LocalPoint seg_loc_coord(segment->x, segment->y, 0);
+          LocalVector trk_loc_vec(chamber->dXdZ, chamber->dYdZ, 1);
+          LocalVector seg_loc_vec(segment->dXdZ, segment->dYdZ, 1);
+
+          const ME0Chamber * me0chamber = ME0Geometry_->chamber(chamber->id);
+
+          GlobalPoint trk_glb_coord = me0chamber->toGlobal(trk_loc_coord);
+          GlobalPoint seg_glb_coord = me0chamber->toGlobal(seg_loc_coord);
+
+          //double segDPhi = segment->me0SegmentRef->deltaPhi();
+          // need to check if this works
+          double segDPhi = me0chamber->computeDeltaPhi(seg_loc_coord, seg_loc_vec);
+          double trackDPhi = me0chamber->computeDeltaPhi(trk_loc_coord, trk_loc_vec);
+
+          deltaEta = std::abs(trk_glb_coord.eta() - seg_glb_coord.eta() );
+          deltaPhi = std::abs(trk_glb_coord.phi() - seg_glb_coord.phi() );
+          deltaPhiBend = std::abs(segDPhi - trackDPhi);
+
+          if (deltaEta < dEtaCut && deltaPhi < dPhiCut && deltaPhiBend < dPhiBendCut) result = true;
+
+        }
+      }
+    }
+
+  }
+
+  return result;
+
+}
+
+                   
 //define this as a plug-in
 DEFINE_FWK_MODULE(MuonTrackAnalyser);
