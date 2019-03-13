@@ -533,7 +533,6 @@ bool MuonTrackAnalyser::isME0MuonSelNew(reco::Muon muon, double dEtaCut, double 
   return result;
 
 }
-
                    
 //define this as a plug-in
 DEFINE_FWK_MODULE(MuonTrackAnalyser);
