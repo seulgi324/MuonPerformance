@@ -114,6 +114,7 @@ private:
   void initValue();
   bool isME0MuonSelNew(reco::Muon muon, double dEtaCut, double dPhiCut, double dPhiBendCut);
 
+
   // ----------member data ---------------------------
   edm::EDGetTokenT<ME0SegmentCollection>       me0Segments_;
 
@@ -272,6 +273,7 @@ MuonTrackAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 {
   edm::ESHandle<ME0Geometry> hME0Geom;
   iSetup.get<MuonGeometryRecord>().get(hME0Geom);
+
   ME0Geometry_ = &*hME0Geom;
 
   /* ME0 Geometry */
